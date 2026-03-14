@@ -7,6 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Job Tracker</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Noto+Sans+Gujarati:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -20,13 +21,19 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .screen{display:none;min-height:100vh;flex-direction:column;animation:fi .25s ease}
 .screen.active{display:flex}
 @keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* TOPBAR */
 .topbar{background:linear-gradient(135deg,var(--navy),var(--blue));padding:48px 16px 14px;flex-shrink:0}
 .topbar-row{display:flex;align-items:center;justify-content:space-between}
-.topbar-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff}
-.topbar-sub{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+.tb-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff}
+.tb-sub{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
 .back-btn,.lang-btn{background:rgba(255,255,255,.18);color:#fff;padding:6px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;border:none}
+
+/* BODY */
 .body{flex:1;overflow-y:auto;padding:14px 14px 80px}
 .body::-webkit-scrollbar{width:0}
+
+/* CARD */
 .card{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(13,27,62,.08);margin-bottom:12px}
 
 /* SPLASH */
@@ -36,6 +43,25 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .splash-sub{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:40px}
 .splash-btn{background:var(--orange);color:#fff;width:100%;padding:16px;border-radius:14px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(240,90,34,.35);margin-bottom:12px}
 .splash-btn-sec{background:rgba(255,255,255,.1);color:#fff;width:100%;padding:14px;border-radius:14px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:1px solid rgba(255,255,255,.2);cursor:pointer;margin-bottom:12px}
+
+/* FORMS */
+.field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;margin-top:14px}
+.field-input{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px;font-size:15px;color:var(--text);width:100%;font-weight:500;font-family:'DM Sans',sans-serif}
+.field-input:focus{outline:none;border-color:var(--blue2);background:#f0f4ff}
+
+/* PIN INPUT */
+.pin-row{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.pin-box{width:52px;height:60px;background:var(--bg);border:2px solid var(--border);border-radius:12px;font-family:'Syne',sans-serif;font-size:24px;font-weight:800;text-align:center;color:var(--navy)}
+.pin-box:focus{outline:none;border-color:var(--blue2);background:#f0f4ff}
+
+/* BUTTONS */
+.btn-main{background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;width:100%;padding:14px;border-radius:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-top:16px;box-shadow:0 4px 16px rgba(240,90,34,.3)}
+.btn-main:disabled{opacity:.4;cursor:not-allowed}
+.btn-sec{background:var(--bg);color:var(--navy);width:100%;padding:13px;border-radius:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:1.5px solid var(--border);cursor:pointer;margin-top:10px}
+.btn-navy{background:var(--navy);color:#fff;width:100%;padding:13px;border-radius:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;border:none;cursor:pointer;margin-top:10px}
+
+/* GOOGLE BTN */
+.google-btn{background:#fff;color:#444;width:100%;padding:13px;border-radius:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:1.5px solid var(--border);cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 
 /* DEPT GRID */
 .dept-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -55,9 +81,6 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .jbadge{padding:2px 8px;border-radius:7px;font-size:9px;font-weight:700}
 .jbadge.green{background:#f0fdf4;color:var(--green)}.jbadge.red{background:#fef2f2;color:var(--red)}.jbadge.grey{background:#f1f5f9;color:var(--grey)}
 .jcust{font-size:10px;color:var(--muted);margin-bottom:8px}
-.delay-warn{font-size:9px;font-weight:700;background:#fef2f2;color:var(--red);padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;margin-bottom:7px}
-.dwdot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
 .g3c{border-radius:9px;padding:7px 4px;text-align:center}
 .g3n{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1}
@@ -85,13 +108,14 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .pc-name.g{color:var(--green)}.pc-name.o{color:var(--orange)}.pc-name.r{color:var(--red)}.pc-name.w{color:var(--muted)}
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .sdot.g{background:var(--green)}.sdot.o{background:var(--orange)}.sdot.r{background:var(--red);animation:pulse 1.2s infinite}.sdot.w{background:#cbd5e1}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .pc-alert{font-size:8px;font-weight:700;padding:2px 7px;border-radius:5px;display:inline-block;margin-bottom:5px}
 .ar{background:#fef2f2;color:var(--red)}.ag{background:#f0fdf4;color:var(--green)}.ao{background:#fff7ed;color:var(--orange)}.aw{background:#f1f5f9;color:var(--grey)}
 .pc-dates{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px}
 .pdb{background:var(--bg);border-radius:7px;padding:5px 7px}
 .pdl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase}
 .pdv{font-size:10px;font-weight:600;color:var(--text);margin-top:1px}
-.pdv.act{color:var(--orange)}.pdv.red2{color:var(--red)}
+.pdv.act{color:var(--orange)}.pdv.r2{color:var(--red)}
 .pac{display:flex;gap:5px}
 .bstart{flex:1;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:9px 4px;border-radius:9px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-align:center;border:none;cursor:pointer}
 .bstop{flex:1;background:linear-gradient(135deg,var(--red),#e53935);color:#fff;padding:9px 4px;border-radius:9px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-align:center;border:none;cursor:pointer}
@@ -103,21 +127,67 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .js-type{background:rgba(255,255,255,.15);color:#fff;padding:2px 9px;border-radius:7px;font-size:10px;font-weight:700;margin-bottom:3px;display:inline-block}
 .js-dates{font-size:9px;color:rgba(255,255,255,.45)}
 
-/* CREATE JOB */
-.field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;margin-top:12px}
-.field-input{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--text);width:100%;font-weight:500;font-family:'DM Sans',sans-serif}
-.field-input:focus{outline:none;border-color:var(--blue2);background:#f0f4ff}
+/* TODAY BOARD */
+.board-card{background:var(--card);border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:0 2px 10px rgba(13,27,62,.08)}
+.board-card.overdue{border-left:4px solid var(--red)}
+.board-card.today{border-left:4px solid var(--orange)}
+.board-card.active{border-left:4px solid var(--green)}
+.bc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.bc-job{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)}
+.bc-badge{padding:2px 8px;border-radius:7px;font-size:9px;font-weight:700}
+.bc-badge.overdue{background:#fef2f2;color:var(--red)}
+.bc-badge.today{background:#fff7ed;color:var(--orange)}
+.bc-badge.active{background:#f0fdf4;color:var(--green)}
+.bc-proc{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.bc-dept{font-size:10px;color:var(--muted);margin-bottom:8px}
+.bc-dates{display:flex;gap:8px;margin-bottom:10px}
+.bc-date{background:var(--bg);border-radius:7px;padding:5px 8px;flex:1;text-align:center}
+.bc-dl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.bc-dv{font-size:10px;font-weight:700;color:var(--text);margin-top:1px}
+.bc-dv.red{color:var(--red)}
+
+/* WORKER CHIPS */
+.worker-section{margin-top:8px}
+.ws-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.worker-chips{display:flex;flex-wrap:wrap;gap:6px}
+.wchip{padding:6px 10px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.wchip.free{background:#f0fdf4;color:var(--green);border-color:#bbf7d0}
+.wchip.busy{background:#fef2f2;color:var(--red);border-color:#fecaca;cursor:not-allowed}
+.wchip.assigned{background:#f0f4ff;color:var(--blue2);border-color:#bfdbfe}
+.wchip-name{font-weight:700}
+.wchip-status{font-size:9px;opacity:.8}
+
+/* ADMIN TABS */
+.admin-tabs{display:flex;gap:0;background:rgba(255,255,255,.1);border-radius:12px;padding:4px;margin-bottom:0}
+.admin-tab{flex:1;padding:9px 6px;text-align:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;border-radius:9px;transition:all .2s}
+.admin-tab.active{background:#fff;color:var(--navy)}
+
+/* WORKER MGMT */
+.worker-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.worker-row:last-child{border:none}
+.wr-info .wr-name{font-size:13px;font-weight:700;color:var(--text)}
+.wr-info .wr-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.wr-status{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700}
+.wr-status.active{background:#f0fdf4;color:var(--green)}
+.wr-status.pending{background:#fff7ed;color:var(--orange)}
+.wr-status.inactive{background:#f1f5f9;color:var(--grey)}
+.wr-actions{display:flex;gap:6px;margin-top:4px}
+.wr-btn{padding:4px 10px;border-radius:7px;font-size:10px;font-weight:700;border:none;cursor:pointer}
+.wr-btn.reset{background:#fef2f2;color:var(--red)}
+.wr-btn.deact{background:#f1f5f9;color:var(--muted)}
+
+/* TYPE ROW */
 .type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px}
 .type-btn{background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:12px;text-align:center;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .2s}
 .type-btn.sel{background:#f0f4ff;border-color:var(--blue2);color:var(--navy)}
-.btn-main{background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;width:100%;padding:14px;border-radius:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-top:16px;box-shadow:0 4px 16px rgba(240,90,34,.3)}
-.btn-main:disabled{opacity:.4;cursor:not-allowed}
 
-/* ADMIN */
+/* STAT ROW */
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .stat-box{background:var(--card);border-radius:12px;padding:10px 8px;text-align:center;box-shadow:0 2px 8px rgba(13,27,62,.07)}
 .stat-n{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
 .stat-l{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-top:2px}
+
+/* ADMIN JOB CARD */
 .admin-jcard{background:var(--card);border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 2px 10px rgba(13,27,62,.07)}
 .ajc-top{display:flex;justify-content:space-between;margin-bottom:6px}
 .ajc-no{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)}
@@ -131,9 +201,9 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-end}
 .modal-overlay.open{display:flex}
-.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px;width:100%;animation:slideup .25s ease}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px;width:100%;animation:slideup .25s ease;max-height:80vh;overflow-y:auto}
 @keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--navy);margin-bottom:12px}
+.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--navy);margin-bottom:14px}
 .modal textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;font-size:13px;font-family:'DM Sans',sans-serif;resize:none;height:90px}
 .modal textarea:focus{outline:none;border-color:var(--blue2)}
 .modal-btns{display:flex;gap:8px;margin-top:10px}
@@ -151,66 +221,132 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .empty-sub{font-size:12px;margin-top:4px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-size:12px;font-weight:600;z-index:200;transition:transform .3s;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy);margin-bottom:10px}
+.info-box{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.info-box strong{color:var(--navy)}
 </style>
 </head>
 <body>
 
-<!-- SPLASH -->
+<!-- ═══ SPLASH ═══ -->
 <div class="screen active" id="scr-splash">
   <div class="splash-logo">🏭</div>
-  <div class="splash-title" id="sp-title">Job Tracker</div>
-  <div class="splash-sub" id="sp-sub">Manufacturing · Production Management</div>
-  <button class="splash-btn" onclick="goRole('worker')" id="sp-worker">👷 I am a Worker</button>
-  <button class="splash-btn-sec" onclick="goRole('admin')" id="sp-admin">👨‍💼 I am Admin</button>
+  <div class="splash-title">Job Tracker</div>
+  <div class="splash-sub">Manufacturing · Production Management</div>
+  <button class="splash-btn" onclick="showScreen('scr-worker-login')">👷 I am a Worker</button>
+  <button class="splash-btn-sec" onclick="showScreen('scr-admin-login')">👨‍💼 I am Admin</button>
   <button class="lang-btn" onclick="toggleLang()" id="lang-toggle"
     style="background:rgba(255,255,255,.15);padding:8px 18px;border-radius:20px;margin-top:8px">
     🌐 ગુજરાતી માં બદલો
   </button>
 </div>
 
-<!-- DEPT SELECT -->
-<div class="screen" id="scr-dept">
+<!-- ═══ WORKER LOGIN ═══ -->
+<div class="screen" id="scr-worker-login">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="topbar-title" id="ds-title">Select Department</div>
-        <div class="topbar-sub" id="ds-sub">Choose your section</div></div>
-      <div style="display:flex;gap:6px">
-        <button class="lang-btn" onclick="toggleLang()">🌐</button>
-        <button class="back-btn" onclick="showScreen('scr-splash')">← Back</button>
-      </div>
+      <div><div class="tb-title">👷 Worker Login</div><div class="tb-sub">Enter your mobile & PIN</div></div>
+      <button class="back-btn" onclick="showScreen('scr-splash')">← Back</button>
     </div>
   </div>
-  <div class="body"><div class="dept-grid" id="dept-grid">
-    <div class="loading" style="grid-column:1/-1"><div class="spinner"></div> Loading...</div>
-  </div></div>
-</div>
-
-<!-- JOB LIST -->
-<div class="screen" id="scr-jobs">
-  <div class="topbar">
-    <div class="topbar-row">
-      <div><div class="topbar-title" id="jl-title">My Jobs</div>
-        <div class="topbar-sub" id="jl-sub"></div></div>
-      <div style="display:flex;gap:6px">
-        <button class="lang-btn" onclick="toggleLang()">🌐</button>
-        <button class="back-btn" onclick="showScreen('scr-dept')">← Back</button>
+  <div class="body">
+    <div class="card">
+      <div class="info-box"><strong>First time?</strong> Enter your mobile number → you'll be asked to set a PIN.</div>
+      <div class="field-label">Mobile Number</div>
+      <input class="field-input" id="wl-mobile" type="tel" placeholder="10-digit mobile number" maxlength="10">
+      <div class="field-label" id="wl-pin-label">4-Digit PIN</div>
+      <div class="pin-row">
+        <input class="pin-box" id="pin1" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'pin2')">
+        <input class="pin-box" id="pin2" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'pin3')" onkeydown="pinBack(event,this,'pin1')">
+        <input class="pin-box" id="pin3" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'pin4')" onkeydown="pinBack(event,this,'pin2')">
+        <input class="pin-box" id="pin4" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,null)" onkeydown="pinBack(event,this,'pin3')">
       </div>
+      <button class="btn-main" onclick="workerLogin()" id="wl-btn">Login</button>
+      <button class="btn-sec" onclick="showScreen('scr-splash')">← Back</button>
     </div>
-  </div>
-  <div class="body" id="job-list-body">
-    <div class="loading"><div class="spinner"></div> Loading jobs...</div>
   </div>
 </div>
 
-<!-- PROCESS LIST -->
+<!-- ═══ SET PIN (first time) ═══ -->
+<div class="screen" id="scr-set-pin">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title">Set Your PIN</div><div class="tb-sub">Choose a 4-digit PIN</div></div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="card">
+      <div class="info-box">Welcome! Set a <strong>4-digit PIN</strong> to secure your account. You'll use this every time you login.</div>
+      <div class="field-label">New PIN</div>
+      <div class="pin-row">
+        <input class="pin-box" id="np1" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'np2')">
+        <input class="pin-box" id="np2" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'np3')" onkeydown="pinBack(event,this,'np1')">
+        <input class="pin-box" id="np3" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'np4')" onkeydown="pinBack(event,this,'np2')">
+        <input class="pin-box" id="np4" type="password" maxlength="1" inputmode="numeric" onkeydown="pinBack(event,this,'np3')">
+      </div>
+      <div class="field-label">Confirm PIN</div>
+      <div class="pin-row">
+        <input class="pin-box" id="cp1" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'cp2')">
+        <input class="pin-box" id="cp2" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'cp3')" onkeydown="pinBack(event,this,'cp1')">
+        <input class="pin-box" id="cp3" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'cp4')" onkeydown="pinBack(event,this,'cp2')">
+        <input class="pin-box" id="cp4" type="password" maxlength="1" inputmode="numeric" onkeydown="pinBack(event,this,'cp3')">
+      </div>
+      <button class="btn-main" onclick="setPin()">Set PIN & Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN LOGIN ═══ -->
+<div class="screen" id="scr-admin-login">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title">👨‍💼 Admin Login</div><div class="tb-sub">Sign in with Google</div></div>
+      <button class="back-btn" onclick="showScreen('scr-splash')">← Back</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="card">
+      <div class="info-box">Only authorized Gmail accounts can access the Admin panel.</div>
+      <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="handleGoogleLogin" data-auto_select="false"></div>
+      <button class="google-btn" onclick="triggerGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        Sign in with Google
+      </button>
+      <div id="admin-login-msg" style="margin-top:12px;font-size:12px;color:var(--red);text-align:center;display:none"></div>
+      <!-- Fallback: direct email entry for testing -->
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">Or enter your Gmail directly (testing mode)</div>
+      <input class="field-input" id="admin-email-input" type="email" placeholder="your@gmail.com">
+      <button class="btn-navy" onclick="adminEmailLogin()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER HOME ═══ -->
+<div class="screen" id="scr-worker-home">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title" id="wh-title">My Jobs</div><div class="tb-sub" id="wh-sub"></div></div>
+      <div style="display:flex;gap:6px">
+        <button class="lang-btn" onclick="toggleLang()">🌐</button>
+        <button class="back-btn" onclick="workerLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+  <div class="body" id="worker-jobs-body">
+    <div class="loading"><div class="spinner"></div> Loading your jobs...</div>
+  </div>
+</div>
+
+<!-- ═══ PROCESS LIST ═══ -->
 <div class="screen" id="scr-procs">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="topbar-title" id="pl-title">Processes</div>
-        <div class="topbar-sub" id="pl-sub"></div></div>
+      <div><div class="tb-title" id="pl-title">Processes</div><div class="tb-sub" id="pl-sub"></div></div>
       <div style="display:flex;gap:6px">
         <button class="lang-btn" onclick="toggleLang()">🌐</button>
-        <button class="back-btn" onclick="showScreen('scr-jobs')">← Jobs</button>
+        <button class="back-btn" onclick="showScreen('scr-worker-home')">← Back</button>
       </div>
     </div>
   </div>
@@ -219,78 +355,40 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   </div>
 </div>
 
-<!-- ADMIN HOME -->
-<div class="screen" id="scr-admin">
+<!-- ═══ ADMIN HOME ═══ -->
+<div class="screen" id="scr-admin-home">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="topbar-title" id="ah-title">Admin Panel</div>
-        <div class="topbar-sub">Job Management</div></div>
+      <div><div class="tb-title">Admin Panel</div><div class="tb-sub" id="admin-email-display"></div></div>
       <div style="display:flex;gap:6px">
         <button class="lang-btn" onclick="toggleLang()">🌐</button>
-        <button class="back-btn" onclick="showScreen('scr-splash')">← Exit</button>
+        <button class="back-btn" onclick="adminLogout()">Logout</button>
       </div>
     </div>
-  </div>
-  <div class="body">
-    <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px">
-      <button onclick="showScreen('scr-create-job')"
-        style="background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:16px 10px;border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;border:none;cursor:pointer">
-        ➕ Create New Job</button>
-      <button onclick="loadAdminDash()"
-        style="background:var(--navy);color:#fff;padding:16px 10px;border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;border:none;cursor:pointer">
-        📊 View All Jobs</button>
+    <div class="admin-tabs" style="margin-top:12px">
+      <div class="admin-tab active" onclick="adminTab('today')" id="tab-today">📋 Today</div>
+      <div class="admin-tab" onclick="adminTab('jobs')" id="tab-jobs">🏭 Jobs</div>
+      <div class="admin-tab" onclick="adminTab('workers')" id="tab-workers">👷 Workers</div>
+      <div class="admin-tab" onclick="adminTab('create')" id="tab-create">➕ New</div>
     </div>
-    <div id="admin-dash-body">
-      <div class="empty"><div class="empty-icon">📋</div>
-        <div class="empty-txt">Tap "View All Jobs" to load</div></div>
+  </div>
+  <div class="body" id="admin-body">
+    <div class="loading"><div class="spinner"></div> Loading...</div>
+  </div>
+</div>
+
+<!-- ═══ ASSIGN WORKER MODAL ═══ -->
+<div class="modal-overlay" id="assign-modal">
+  <div class="modal">
+    <div class="modal-title" id="assign-modal-title">Assign Worker</div>
+    <div id="assign-modal-body"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeAssignModal()">Close</button>
     </div>
   </div>
 </div>
 
-<!-- CREATE JOB -->
-<div class="screen" id="scr-create-job">
-  <div class="topbar">
-    <div class="topbar-row">
-      <div><div class="topbar-title">Create New Job</div>
-        <div class="topbar-sub">Auto-generates full schedule</div></div>
-      <button class="back-btn" onclick="showScreen('scr-admin')">← Back</button>
-    </div>
-  </div>
-  <div class="body">
-    <div class="card">
-      <div class="field-label">Job Number</div>
-      <input class="field-input" id="inp-jobno" placeholder="e.g. JOB-2024-001">
-      <div class="field-label">Product Type</div>
-      <div class="type-row">
-        <div class="type-btn" id="btn-boiler" onclick="selectType('Boiler')">
-          Boiler<div style="font-size:9px;font-weight:400;margin-top:2px;color:inherit">66 processes</div>
-        </div>
-        <div class="type-btn" id="btn-autoclave" onclick="selectType('Autoclave')">
-          Autoclave<div style="font-size:9px;font-weight:400;margin-top:2px;color:inherit">56 processes</div>
-        </div>
-      </div>
-      <div class="field-label">Customer / Party Name</div>
-      <input class="field-input" id="inp-customer" placeholder="Customer name">
-      <div class="field-label">Start Date</div>
-      <input class="field-input" id="inp-date" type="date">
-      <button class="btn-main" id="btn-create" onclick="createJob()" disabled>
-        ⚡ Generate Schedule & Notify All Depts
-      </button>
-    </div>
-    <div id="create-result" style="display:none">
-      <div class="card" style="border:1.5px solid var(--green);background:#f0fdf4">
-        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--green);margin-bottom:8px">✅ Job Created Successfully!</div>
-        <div id="create-result-body" style="font-size:12px;line-height:1.8"></div>
-      </div>
-      <div class="card">
-        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy);margin-bottom:10px">💬 WhatsApp Messages — Copy & Send</div>
-        <div id="wa-messages"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- REMARK MODAL -->
+<!-- ═══ REMARK MODAL ═══ -->
 <div class="modal-overlay" id="remark-modal">
   <div class="modal">
     <div class="modal-title" id="rm-title">Add Remark</div>
@@ -302,169 +400,262 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   </div>
 </div>
 
+<!-- ═══ ADD WORKER MODAL ═══ -->
+<div class="modal-overlay" id="add-worker-modal">
+  <div class="modal">
+    <div class="modal-title">Add New Worker</div>
+    <div class="field-label">Full Name</div>
+    <input class="field-input" id="aw-name" placeholder="Worker name">
+    <div class="field-label">Mobile Number</div>
+    <input class="field-input" id="aw-mobile" type="tel" placeholder="10-digit mobile" maxlength="10">
+    <div class="field-label">Primary Department</div>
+    <select class="field-input" id="aw-dept1"></select>
+    <div class="field-label">Secondary Department (optional)</div>
+    <select class="field-input" id="aw-dept2">
+      <option value="">-- None --</option>
+    </select>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeAddWorker()">Cancel</button>
+      <button class="modal-save" onclick="addWorker()" id="aw-save">Add Worker</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbzdpCpn88jMAENuvqT8FQB6exEeO62af2FxocAWKTBW6C434S_tSviRyDKqY9-S1tI/exec';
-let lang=localStorage.getItem('lang')||'en';
-let role='',currentDept='',currentJob=null,remarkCtx=null,selType='';
+// ── CONFIG ──
+const API = 'https://script.google.com/macros/s/AKfycbzdpCpn88jMAENuvqT8FQB6exEeO62af2FxocAWKTBW6C434S_tSviRyDKqY9-S1tI/exec';
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // optional - using email fallback
 
-const T={
-  en:{ds_title:'Select Department',ds_sub:'Choose your section',
-      total:'Total',active:'Active',future:'Future',
-      first_proc:'First Process',last_proc:'Last Process',
-      plan_start:'Plan Start',plan_end:'Plan End',act_start:'Actual Start',act_end:'Actual End',
-      btn_start:'▶ START',btn_stop:'■ STOP',
-      done_ontime:'✅ Completed on time',done_late:'⚠️ Done — delayed',
-      running:'🟠 Running now',overdue:'🔴 OVERDUE — not started',upcoming:'⚪ Upcoming',
-      no_jobs:'No active jobs',no_jobs_sub:'All jobs complete or none assigned',
-      tap_view:'Tap to view processes ›',
-      on_track:'✓ On Track',delayed:'⚠️ Delayed',upcoming_job:'⚪ Upcoming',
-      lang_sw:'🌐 Switch to Gujarati'},
-  gu:{ds_title:'વિભાગ પસંદ કરો',ds_sub:'તમારો વિભાગ પસંદ કરો',
-      total:'કુલ',active:'ચાલુ',future:'આગળ',
-      first_proc:'પ્રથમ',last_proc:'છેલ્લું',
-      plan_start:'નિ.શરૂ',plan_end:'નિ.અંત',act_start:'વા.શરૂ',act_end:'વા.અંત',
-      btn_start:'▶ શરૂ',btn_stop:'■ બંધ',
-      done_ontime:'✅ સમયસર પૂર્ણ',done_late:'⚠️ પૂર્ણ — વિલંબ',
-      running:'🟠 ચાલુ',overdue:'🔴 મોડું — શરૂ ન થયું',upcoming:'⚪ આગળ',
-      no_jobs:'કોઈ સક્રિય જૉબ નથી',no_jobs_sub:'બધા જૉબ પૂર્ણ',
-      tap_view:'પ્રક્રિયા જોવા ›',
-      on_track:'✓ સમયસર',delayed:'⚠️ વિલંબ',upcoming_job:'⚪ આગળ',
-      lang_sw:'🌐 English માં બદલો'}
-};
-function t(k){return T[lang][k]||T.en[k]||k;}
+// ── STATE ──
+let lang = localStorage.getItem('lang') || 'en';
+let currentWorker = JSON.parse(localStorage.getItem('worker') || 'null');
+let currentAdmin  = JSON.parse(localStorage.getItem('admin')  || 'null');
+let currentJob    = null;
+let currentDept   = null;
+let remarkCtx     = null;
+let assignCtx     = null;
+let allDepts      = [];
+let adminCurrentTab = 'today';
+let selType = '';
 
-const ICONS={Assembly:'🔧',Bending:'🔨',Cutting:'✂️',Drilling:'🔩',Fitting:'⚙️',
+const ICONS = {Assembly:'🔧',Bending:'🔨',Cutting:'✂️',Drilling:'🔩',Fitting:'⚙️',
   Grinding:'💿',Insulation:'🧱',Machining:'🏭',Painting:'🎨',
   Refractory:'🔥',Testing:'🧪',Welding:'⚡',Wiring:'🔌'};
 
-async function api(p){
-  const r=await fetch(API+'?'+new URLSearchParams(p).toString());
+// ── API ──
+async function api(p) {
+  const r = await fetch(API + '?' + new URLSearchParams(p).toString());
   return r.json();
 }
-async function apiPost(b){
-  const r=await fetch(API,{method:'POST',body:JSON.stringify(b)});
+async function apiPost(b) {
+  const r = await fetch(API, {method:'POST', body:JSON.stringify(b)});
   return r.json();
 }
 
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+// ── SCREEN NAV ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
 }
 
-function toggleLang(){
-  lang=lang==='en'?'gu':'en';
-  localStorage.setItem('lang',lang);
-  document.getElementById('lang-toggle').textContent=t('lang_sw');
-  // update visible dept screen if open
-  if(document.getElementById('scr-dept').classList.contains('active')){
-    document.getElementById('ds-title').textContent=t('ds_title');
-    document.getElementById('ds-sub').textContent=t('ds_sub');
-  }
+// ── LANG ──
+function toggleLang() {
+  lang = lang === 'en' ? 'gu' : 'en';
+  localStorage.setItem('lang', lang);
+  document.getElementById('lang-toggle').textContent = lang === 'en' ? '🌐 ગુજરાતી માં બદલો' : '🌐 English માં બદલો';
 }
 
-function goRole(r){
-  role=r;
-  if(r==='admin'){showScreen('scr-admin');return;}
-  loadDepts();showScreen('scr-dept');
+// ── PIN HELPERS ──
+function pinNext(el, nextId) {
+  if (el.value && nextId) document.getElementById(nextId).focus();
+}
+function pinBack(e, el, prevId) {
+  if (e.key === 'Backspace' && !el.value && prevId) document.getElementById(prevId).focus();
+}
+function getPin(prefix) {
+  return ['1','2','3','4'].map(i => document.getElementById(prefix+i).value).join('');
+}
+function clearPin(prefix) {
+  ['1','2','3','4'].forEach(i => { document.getElementById(prefix+i).value = ''; });
 }
 
-async function loadDepts(){
-  const grid=document.getElementById('dept-grid');
-  grid.innerHTML=`<div class="loading" style="grid-column:1/-1"><div class="spinner"></div> Loading...</div>`;
-  try{
-    const d=await api({action:'getDepts'});
-    if(!d.success)throw new Error(d.error);
-    grid.innerHTML='';
-    for(const dept of d.depts){
-      const div=document.createElement('div');
-      div.className='dept-card';
-      div.innerHTML=`<div class="dept-icon">${ICONS[dept.name]||'🏭'}</div>
-        <div class="dept-name">${dept.name}</div>
-        <div class="dept-gu">${dept.nameGu}</div>`;
-      div.onclick=()=>selectDept(dept.name,dept.nameGu);
-      grid.appendChild(div);
+// ── WORKER LOGIN ──
+async function workerLogin() {
+  const mobile = document.getElementById('wl-mobile').value.trim();
+  const pin    = getPin('pin');
+  if (mobile.length !== 10) { showToast('⚠️ Enter 10-digit mobile number'); return; }
+  if (!pin) { showToast('⚠️ Enter your PIN'); return; }
+  const btn = document.getElementById('wl-btn');
+  btn.disabled = true; btn.textContent = '⏳ Checking...';
+  try {
+    const d = await apiPost({action:'workerLogin', mobile, pin});
+    if (d.needsPin) {
+      // First time — need to set PIN
+      window._pendingWorker = {workerId:d.workerId, name:d.name, mobile:d.mobile, dept1:d.dept1, dept2:d.dept2};
+      clearPin('np'); clearPin('cp');
+      showScreen('scr-set-pin');
+      showToast('👋 Welcome '+d.name+'! Set your PIN.');
+    } else if (d.success) {
+      saveWorkerSession(d);
+      showToast('✅ Welcome '+d.name+'!');
+      loadWorkerHome();
+      showScreen('scr-worker-home');
+    } else {
+      showToast('⚠️ '+(d.error||'Login failed'));
     }
-  }catch(e){
-    grid.innerHTML=`<div class="empty" style="grid-column:1/-1">
-      <div class="empty-icon">⚠️</div><div class="empty-txt">Failed to load</div>
-      <div class="empty-sub">${e.message}</div></div>`;
-  }
+  } catch(e) { showToast('⚠️ '+e.message); }
+  btn.disabled = false; btn.textContent = 'Login';
 }
 
-function selectDept(name,gu){
-  currentDept=name;
-  document.getElementById('jl-title').textContent=ICONS[name]+' '+name;
-  document.getElementById('jl-sub').textContent=gu;
-  loadJobs();showScreen('scr-jobs');
+async function setPin() {
+  const newPin     = getPin('np');
+  const confirmPin = getPin('cp');
+  if (newPin.length !== 4) { showToast('⚠️ Enter 4-digit PIN'); return; }
+  if (newPin !== confirmPin) { showToast('⚠️ PINs do not match'); return; }
+  try {
+    const w = window._pendingWorker;
+    const d = await apiPost({action:'setPin', workerId:w.workerId, pin:newPin});
+    if (d.success) {
+      saveWorkerSession(d);
+      showToast('✅ PIN set! Welcome '+d.name);
+      loadWorkerHome();
+      showScreen('scr-worker-home');
+    } else { showToast('⚠️ '+(d.error||'Failed')); }
+  } catch(e) { showToast('⚠️ '+e.message); }
 }
 
-async function loadJobs(){
-  const body=document.getElementById('job-list-body');
-  body.innerHTML=`<div class="loading"><div class="spinner"></div> ${t('no_jobs')}...</div>`;
-  try{
-    const d=await api({action:'getDeptJobs',dept:currentDept});
-    if(!d.success)throw new Error(d.error);
-    if(!d.jobs.length){
-      body.innerHTML=`<div class="empty"><div class="empty-icon">✅</div>
-        <div class="empty-txt">${t('no_jobs')}</div>
-        <div class="empty-sub">${t('no_jobs_sub')}</div></div>`;
+function saveWorkerSession(d) {
+  currentWorker = {workerId:d.workerId, name:d.name, mobile:d.mobile, dept1:d.dept1, dept2:d.dept2||''};
+  localStorage.setItem('worker', JSON.stringify(currentWorker));
+}
+
+function workerLogout() {
+  currentWorker = null;
+  localStorage.removeItem('worker');
+  showScreen('scr-splash');
+}
+
+// ── ADMIN LOGIN ──
+function triggerGoogleLogin() {
+  // Google One Tap — fallback to email input if not configured
+  showToast('Use email input below for now');
+}
+
+function handleGoogleLogin(response) {
+  // Parse JWT from Google
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  verifyAdminEmail(payload.email);
+}
+
+async function adminEmailLogin() {
+  const email = document.getElementById('admin-email-input').value.trim();
+  if (!email) { showToast('⚠️ Enter Gmail address'); return; }
+  await verifyAdminEmail(email);
+}
+
+async function verifyAdminEmail(email) {
+  try {
+    const d = await apiPost({action:'verifyAdmin', email});
+    if (d.success) {
+      currentAdmin = {email};
+      localStorage.setItem('admin', JSON.stringify(currentAdmin));
+      document.getElementById('admin-email-display').textContent = email;
+      loadAdminTab('today');
+      showScreen('scr-admin-home');
+      showToast('✅ Welcome Admin!');
+    } else {
+      const msg = document.getElementById('admin-login-msg');
+      msg.style.display = 'block';
+      msg.textContent = d.error || 'Access denied';
+      showToast('⚠️ '+(d.error||'Access denied'));
+    }
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+function adminLogout() {
+  currentAdmin = null;
+  localStorage.removeItem('admin');
+  showScreen('scr-splash');
+}
+
+// ── WORKER HOME ──
+async function loadWorkerHome() {
+  if (!currentWorker) return;
+  document.getElementById('wh-title').textContent = '👷 '+currentWorker.name;
+  document.getElementById('wh-sub').textContent = currentWorker.dept1 + (currentWorker.dept2?' · '+currentWorker.dept2:'');
+  const body = document.getElementById('worker-jobs-body');
+  body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading your jobs...</div>`;
+  try {
+    const d = await api({action:'getMyJobs', workerId:currentWorker.workerId});
+    if (!d.success) throw new Error(d.error);
+    if (!d.jobs.length) {
+      body.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>
+        <div class="empty-txt">No jobs assigned yet</div>
+        <div class="empty-sub">Admin will assign processes to you</div></div>`;
       return;
     }
-    body.innerHTML='';
-    for(const j of d.jobs){
-      const badgeText=j.colour==='green'?t('on_track'):j.colour==='red'?t('delayed'):t('upcoming_job');
-      const hasDelayWarn=j.colour==='red'&&j.active>0;
-      const div=document.createElement('div');
-      div.className=`jcard ${j.colour}`;
-      div.innerHTML=`
-        <div class="jc-r1">
-          <div class="jno ${j.colour}">${j.jobNo}</div>
-          <div class="jbadge ${j.colour}">${badgeText}</div>
-        </div>
-        <div class="jcust">${j.customer} · ${j.productType}</div>
-        ${hasDelayWarn?`<div class="delay-warn"><span class="dwdot"></span>${lang==='gu'?'1 પ્રક્રિયા મોડી':'1 process started late'}</div>`:''}
-        <div class="grid3">
-          <div class="g3c g3-tot"><div class="g3n">${j.total}</div><div class="g3l">${t('total')}</div></div>
-          <div class="g3c g3-act"><div class="g3n">${j.active}</div><div class="g3l">${t('active')}</div></div>
-          <div class="g3c g3-fut"><div class="g3n">${j.future}</div><div class="g3l">${t('future')}</div></div>
-        </div>
-        <div class="dstrip">
-          <div class="dsb"><div class="dsl">${t('first_proc')}</div>
-            <div class="dsv ${j.colour==='grey'?'fut':''}">${j.firstProcDate}</div></div>
-          <div style="color:var(--muted)">→</div>
-          <div class="dsb" style="text-align:right"><div class="dsl">${t('last_proc')}</div>
-            <div class="dsv ${j.colour==='grey'?'fut':''}">${j.lastProcDate}</div></div>
-        </div>
-        <div class="jprog"><div class="jprog-bar" style="width:${j.progress}%;background:${
-          j.colour==='red'?'linear-gradient(90deg,var(--red),var(--orange))':
-          j.colour==='green'?'linear-gradient(90deg,var(--blue2),var(--green))':'var(--grey)'}"></div></div>
-        <div class="jfoot"><span>${j.progress}% complete</span><span class="jtap">${t('tap_view')}</span></div>`;
-      div.onclick=()=>selectJob(j);
-      body.appendChild(div);
-    }
-  }catch(e){
-    body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div>
+    body.innerHTML = '';
+    renderJobCards(body, d.jobs);
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
       <div class="empty-txt">Error loading jobs</div><div class="empty-sub">${e.message}</div></div>`;
   }
 }
 
-function selectJob(j){
-  currentJob=j;
-  document.getElementById('pl-title').textContent=j.jobNo;
-  document.getElementById('pl-sub').textContent=j.customer+' · '+j.productType;
-  loadProcs();showScreen('scr-procs');
+function renderJobCards(container, jobs) {
+  for (const j of jobs) {
+    const badgeText = j.colour==='green'?'✓ On Track':j.colour==='red'?'⚠️ Delayed':'⚪ Upcoming';
+    const div = document.createElement('div');
+    div.className = `jcard ${j.colour}`;
+    div.innerHTML = `
+      <div class="jc-r1">
+        <div class="jno ${j.colour}">${j.jobNo}</div>
+        <div class="jbadge ${j.colour}">${badgeText}</div>
+      </div>
+      <div class="jcust">${j.customer} · ${j.productType}</div>
+      <div class="grid3">
+        <div class="g3c g3-tot"><div class="g3n">${j.total}</div><div class="g3l">${lang==='gu'?'કુલ':'Total'}</div></div>
+        <div class="g3c g3-act"><div class="g3n">${j.active}</div><div class="g3l">${lang==='gu'?'ચાલુ':'Active'}</div></div>
+        <div class="g3c g3-fut"><div class="g3n">${j.future}</div><div class="g3l">${lang==='gu'?'આગળ':'Future'}</div></div>
+      </div>
+      <div class="dstrip">
+        <div class="dsb"><div class="dsl">${lang==='gu'?'પ્રથમ':'First Process'}</div>
+          <div class="dsv ${j.colour==='grey'?'fut':''}">${j.firstProcDate}</div></div>
+        <div style="color:var(--muted)">→</div>
+        <div class="dsb" style="text-align:right"><div class="dsl">${lang==='gu'?'છેલ્લું':'Last Process'}</div>
+          <div class="dsv ${j.colour==='grey'?'fut':''}">${j.lastProcDate}</div></div>
+      </div>
+      <div class="jprog"><div class="jprog-bar" style="width:${j.progress}%;background:${
+        j.colour==='red'?'linear-gradient(90deg,var(--red),var(--orange))':
+        j.colour==='green'?'linear-gradient(90deg,var(--blue2),var(--green))':'var(--grey)'}"></div></div>
+      <div class="jfoot"><span>${j.progress}% complete</span>
+        <span class="jtap">${lang==='gu'?'પ્રક્રિયા જોવા ›':'Tap to view processes ›'}</span></div>`;
+    div.onclick = () => selectJob(j);
+    container.appendChild(div);
+  }
 }
 
-async function loadProcs(){
-  const body=document.getElementById('proc-list-body');
-  body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
-  try{
-    const d=await api({action:'getJobProcs',jobNo:currentJob.jobNo,dept:currentDept});
-    if(!d.success)throw new Error(d.error);
-    body.innerHTML=`
+function selectJob(j) {
+  currentJob = j;
+  currentDept = currentWorker ? currentWorker.dept1 : null;
+  document.getElementById('pl-title').textContent = j.jobNo;
+  document.getElementById('pl-sub').textContent = j.customer + ' · ' + j.productType;
+  loadProcs();
+  showScreen('scr-procs');
+}
+
+// ── PROCESS LIST ──
+async function loadProcs() {
+  const body = document.getElementById('proc-list-body');
+  body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
+  try {
+    const dept = currentDept || (currentWorker ? currentWorker.dept1 : '');
+    const d = await api({action:'getJobProcs', jobNo:currentJob.jobNo, dept});
+    if (!d.success) throw new Error(d.error);
+    body.innerHTML = `
       <div class="job-strip">
         <div><div class="js-no">${currentJob.jobNo}</div>
           <div class="js-cust">${currentJob.customer}</div></div>
@@ -473,17 +664,15 @@ async function loadProcs(){
           <div class="js-dates">${currentJob.firstProcDate||''} → ${currentJob.lastProcDate||''}</div>
         </div>
       </div>`;
-    for(const p of d.procs){
-      const sc=p.colour==='green'?'g':p.colour==='orange'?'o':p.colour==='red'?'r':'w';
-      const alertTxt=p.colour==='green'?(p.delayHrs>0?t('done_late'):t('done_ontime')):
-                     p.colour==='orange'?t('running'):p.colour==='red'?t('overdue'):t('upcoming');
-      const alertCls=p.colour==='green'?'ag':p.colour==='orange'?'ao':p.colour==='red'?'ar':'aw';
-      const canStart=p.status==='Pending';
-      const canStop=p.status==='In Progress';
-      const div=document.createElement('div');
-      div.className=`proc-card p${sc}`;
-      div.id=`proc-${p.seq}`;
-      div.innerHTML=`
+    for (const p of d.procs) {
+      const sc = p.colour==='green'?'g':p.colour==='orange'?'o':p.colour==='red'?'r':'w';
+      const alertTxt = p.colour==='green'?(p.delayHrs>0?'⚠️ Done — delayed':'✅ Completed on time'):
+                       p.colour==='orange'?'🟠 Running now':p.colour==='red'?'🔴 OVERDUE':'⚪ Upcoming';
+      const alertCls = p.colour==='green'?'ag':p.colour==='orange'?'ao':p.colour==='red'?'ar':'aw';
+      const div = document.createElement('div');
+      div.className = `proc-card p${sc}`;
+      div.id = `proc-${p.seq}`;
+      div.innerHTML = `
         <div class="pc-top">
           <div class="pc-seq ${sc}">${p.seq}</div>
           <div class="pc-name ${sc}">${p.name}</div>
@@ -491,148 +680,257 @@ async function loadProcs(){
         </div>
         <div class="pc-alert ${alertCls}">${alertTxt}</div>
         <div class="pc-dates">
-          <div class="pdb"><div class="pdl">${t('plan_start')}</div>
-            <div class="pdv ${p.colour==='red'?'red2':''}">${p.planStart}</div></div>
-          <div class="pdb"><div class="pdl">${t('plan_end')}</div>
+          <div class="pdb"><div class="pdl">${lang==='gu'?'નિ.શરૂ':'Plan Start'}</div>
+            <div class="pdv ${p.colour==='red'?'r2':''}">${p.planStart}</div></div>
+          <div class="pdb"><div class="pdl">${lang==='gu'?'નિ.અંત':'Plan End'}</div>
             <div class="pdv">${p.planEnd}</div></div>
-          <div class="pdb"><div class="pdl">${t('act_start')}</div>
+          <div class="pdb"><div class="pdl">${lang==='gu'?'વા.શરૂ':'Actual Start'}</div>
             <div class="pdv act">${p.actStart||'—'}</div></div>
-          <div class="pdb"><div class="pdl">${t('act_end')}</div>
+          <div class="pdb"><div class="pdl">${lang==='gu'?'વા.અંત':'Actual End'}</div>
             <div class="pdv act">${p.actEnd||'—'}</div></div>
         </div>
         <div class="pac">
-          <button class="bstart" ${canStart?'':'disabled'} onclick="stampStart(${p.seq})">${t('btn_start')}</button>
-          <button class="bstop" ${canStop?'':'disabled'} onclick="stampStop(${p.seq})">${t('btn_stop')}</button>
+          <button class="bstart" ${p.status==='Pending'?'':'disabled'} onclick="stampStart(${p.seq})">
+            ${lang==='gu'?'▶ શરૂ':'▶ START'}</button>
+          <button class="bstop" ${p.status==='In Progress'?'':'disabled'} onclick="stampStop(${p.seq})">
+            ${lang==='gu'?'■ બંધ':'■ STOP'}</button>
           <button class="brem" onclick="openRemark(${p.seq},'${p.name.replace(/'/g,"\\'").substring(0,40)}')">📝</button>
         </div>`;
       body.appendChild(div);
     }
-  }catch(e){
-    body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div>
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
       <div class="empty-txt">Error</div><div class="empty-sub">${e.message}</div></div>`;
   }
 }
 
-async function stampStart(seq){
-  const btn=document.querySelector(`#proc-${seq} .bstart`);
-  if(btn){btn.disabled=true;btn.textContent='⏳';}
-  try{
-    const d=await apiPost({action:'stampStart',jobNo:currentJob.jobNo,dept:currentDept,seq});
-    if(!d.success)throw new Error(d.error);
-    showToast(lang==='gu'?'✅ શરૂ નોંધાયું':'✅ Start recorded — '+d.actStart);
+async function stampStart(seq) {
+  const dept = currentDept || currentWorker.dept1;
+  const btn = document.querySelector(`#proc-${seq} .bstart`);
+  if (btn) { btn.disabled=true; btn.textContent='⏳'; }
+  try {
+    const d = await apiPost({action:'stampStart', jobNo:currentJob.jobNo, dept, seq});
+    if (!d.success) throw new Error(d.error);
+    showToast(lang==='gu'?'✅ શરૂ નોંધાયું — '+d.actStart:'✅ Started — '+d.actStart);
     loadProcs();
-  }catch(e){showToast('⚠️ '+e.message);if(btn){btn.disabled=false;btn.textContent=t('btn_start');}}
+  } catch(e) {
+    showToast('⚠️ '+e.message);
+    if (btn) { btn.disabled=false; btn.textContent=lang==='gu'?'▶ શરૂ':'▶ START'; }
+  }
 }
 
-async function stampStop(seq){
-  const btn=document.querySelector(`#proc-${seq} .bstop`);
-  if(btn){btn.disabled=true;btn.textContent='⏳';}
-  try{
-    const d=await apiPost({action:'stampStop',jobNo:currentJob.jobNo,dept:currentDept,seq});
-    if(!d.success)throw new Error(d.error);
-    const msg=d.delayHrs>0?(lang==='gu'?`⚠️ ${d.delayHrs} કલાક વિલંબ`:`⚠️ ${d.delayHrs} hrs delayed`)
-                          :(lang==='gu'?'✅ સમયસર પૂર્ણ':'✅ Completed on time');
-    showToast(msg);loadProcs();
-  }catch(e){showToast('⚠️ '+e.message);if(btn){btn.disabled=false;btn.textContent=t('btn_stop');}}
+async function stampStop(seq) {
+  const dept = currentDept || currentWorker.dept1;
+  const btn = document.querySelector(`#proc-${seq} .bstop`);
+  if (btn) { btn.disabled=true; btn.textContent='⏳'; }
+  try {
+    const d = await apiPost({action:'stampStop', jobNo:currentJob.jobNo, dept, seq});
+    if (!d.success) throw new Error(d.error);
+    const msg = d.delayHrs > 0
+      ? (lang==='gu'?`⚠️ ${d.delayHrs} કલાક વિલંબ`:`⚠️ ${d.delayHrs} hrs delayed`)
+      : (lang==='gu'?'✅ સમયસર પૂર્ણ':'✅ Completed on time');
+    showToast(msg);
+    loadProcs();
+  } catch(e) {
+    showToast('⚠️ '+e.message);
+    if (btn) { btn.disabled=false; btn.textContent=lang==='gu'?'■ બંધ':'■ STOP'; }
+  }
 }
 
-function openRemark(seq,name){
-  remarkCtx={seq,name};
-  document.getElementById('rm-title').textContent=name;
-  document.getElementById('rm-text').value='';
+// ── REMARK ──
+function openRemark(seq, name) {
+  remarkCtx = {seq, name};
+  document.getElementById('rm-title').textContent = name;
+  document.getElementById('rm-text').value = '';
   document.getElementById('remark-modal').classList.add('open');
 }
-function closeRemark(){document.getElementById('remark-modal').classList.remove('open');remarkCtx=null;}
-async function saveRemark(){
-  const rem=document.getElementById('rm-text').value.trim();
-  if(!rem)return;
-  const btn=document.getElementById('rm-save');
-  btn.textContent='...';btn.disabled=true;
-  try{
-    const d=await apiPost({action:'saveRemark',jobNo:currentJob.jobNo,dept:currentDept,seq:remarkCtx.seq,remark:rem});
-    if(!d.success)throw new Error(d.error);
+function closeRemark() {
+  document.getElementById('remark-modal').classList.remove('open');
+  remarkCtx = null;
+}
+async function saveRemark() {
+  const remark = document.getElementById('rm-text').value.trim();
+  if (!remark) return;
+  const dept = currentDept || currentWorker.dept1;
+  const btn = document.getElementById('rm-save');
+  btn.textContent='...'; btn.disabled=true;
+  try {
+    const d = await apiPost({action:'saveRemark', jobNo:currentJob.jobNo, dept, seq:remarkCtx.seq, remark});
+    if (!d.success) throw new Error(d.error);
     showToast(lang==='gu'?'✅ નોંધ સેવ થઈ':'✅ Remark saved');
     closeRemark();
-  }catch(e){showToast('⚠️ '+e.message);}
-  finally{btn.textContent='Save';btn.disabled=false;}
+  } catch(e) { showToast('⚠️ '+e.message); }
+  finally { btn.textContent='Save'; btn.disabled=false; }
 }
 
-function selectType(type){
-  selType=type;
-  document.getElementById('btn-boiler').classList.toggle('sel',type==='Boiler');
-  document.getElementById('btn-autoclave').classList.toggle('sel',type==='Autoclave');
-  checkReady();
+// ── ADMIN TABS ──
+function adminTab(tab) {
+  adminCurrentTab = tab;
+  ['today','jobs','workers','create'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  loadAdminTab(tab);
 }
-function checkReady(){
-  document.getElementById('btn-create').disabled=
-    !(document.getElementById('inp-jobno').value.trim()&&selType&&
-      document.getElementById('inp-customer').value.trim()&&
-      document.getElementById('inp-date').value);
-}
-['inp-jobno','inp-customer','inp-date'].forEach(id=>
-  document.getElementById(id).addEventListener('input',checkReady));
 
-async function createJob(){
-  const jobNo=document.getElementById('inp-jobno').value.trim();
-  const cust=document.getElementById('inp-customer').value.trim();
-  const date=document.getElementById('inp-date').value;
-  const btn=document.getElementById('btn-create');
-  btn.disabled=true;btn.textContent='⏳ Creating...';
-  document.getElementById('create-result').style.display='none';
-  try{
-    const d=await apiPost({action:'createJob',jobNo,productType:selType,customerName:cust,startDate:date});
-    if(!d.success)throw new Error(d.error);
-    document.getElementById('create-result-body').innerHTML=
-      `<b>${d.jobNo}</b> · ${d.productType}<br>Customer: ${d.customerName}<br>
-       Total schedule rows written: ${d.totalProcessRows}<br>
-       Departments with processes: ${Object.keys(d.waMessages).length}`;
-    let waHtml='';
-    for(const[dept,wa]of Object.entries(d.waMessages)){
-      waHtml+=`<div style="background:#e7f8e8;border-radius:10px;padding:10px;margin-bottom:8px;border:1px solid #c3e6c3">
-        <div style="font-weight:700;color:#1a3a1a;font-size:12px;margin-bottom:4px">
-          ${ICONS[dept]||'🏭'} ${dept} — ${wa.deptGu} (${wa.count} processes)</div>
-        <div style="font-size:10px;color:#2d4a2d;line-height:1.8">
-          🟢 <b>First:</b> Seq ${wa.firstProc.seq} · ${wa.firstProc.name.substring(0,45)}<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;${wa.firstProc.start} → ${wa.firstProc.end}<br>
-          🔴 <b>Last:</b> &nbsp;Seq ${wa.lastProc.seq} · ${wa.lastProc.name.substring(0,45)}<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;${wa.lastProc.start} → ${wa.lastProc.end}
-        </div></div>`;
+async function loadAdminTab(tab) {
+  const body = document.getElementById('admin-body');
+  body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
+
+  if (tab === 'today') await loadTodayBoard(body);
+  else if (tab === 'jobs') await loadAdminJobs(body);
+  else if (tab === 'workers') await loadWorkerMgmt(body);
+  else if (tab === 'create') renderCreateJob(body);
+}
+
+// ── TODAY BOARD ──
+async function loadTodayBoard(body) {
+  try {
+    const d = await api({action:'getTodayBoard'});
+    if (!d.success) throw new Error(d.error);
+
+    if (!d.board.length) {
+      body.innerHTML = `<div class="empty"><div class="empty-icon">✅</div>
+        <div class="empty-txt">Nothing due today</div>
+        <div class="empty-sub">All processes on schedule</div></div>`;
+      return;
     }
-    document.getElementById('wa-messages').innerHTML=waHtml;
-    document.getElementById('create-result').style.display='block';
-    showToast('✅ Job created successfully!');
-    document.getElementById('inp-jobno').value='';
-    document.getElementById('inp-customer').value='';
-    document.getElementById('inp-date').value='';
-    selType='';
-    document.getElementById('btn-boiler').classList.remove('sel');
-    document.getElementById('btn-autoclave').classList.remove('sel');
-  }catch(e){showToast('⚠️ '+e.message);}
-  btn.disabled=false;btn.textContent='⚡ Generate Schedule & Notify All Depts';checkReady();
+
+    body.innerHTML = `
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.overdue}</div><div class="stat-l">Overdue</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${d.today}</div><div class="stat-l">Today</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--green)">${d.active}</div><div class="stat-l">Active</div></div>
+      </div>`;
+
+    for (const p of d.board) {
+      const cls = p.isOverdue?'overdue':p.isActive?'active':'today';
+      const badgeText = p.isOverdue?'🔴 Overdue':p.isActive?'🟢 Active':'🟠 Today';
+      const assignedHtml = p.assignedWorkers.length
+        ? p.assignedWorkers.map(w=>`<span class="wchip assigned"><span class="wchip-name">${w.workerName}</span></span>`).join('')
+        : `<span style="font-size:10px;color:var(--muted)">No workers assigned yet</span>`;
+
+      const div = document.createElement('div');
+      div.className = `board-card ${cls}`;
+      div.innerHTML = `
+        <div class="bc-top">
+          <div>
+            <div class="bc-job">${p.jobNo} · Seq ${p.seq}</div>
+            <div style="font-size:10px;color:var(--muted)">${p.customer} · ${p.productType}</div>
+          </div>
+          <div class="bc-badge ${cls}">${badgeText}</div>
+        </div>
+        <div class="bc-proc">${p.processName}</div>
+        <div class="bc-dept">${ICONS[p.dept]||'🏭'} ${p.dept} · ${p.durHrs} hrs</div>
+        <div class="bc-dates">
+          <div class="bc-date"><div class="bc-dl">Plan Start</div>
+            <div class="bc-dv ${p.isOverdue?'red':''}">${p.planStart}</div></div>
+          <div class="bc-date"><div class="bc-dl">Plan End</div>
+            <div class="bc-dv">${p.planEnd}</div></div>
+          ${p.actStart?`<div class="bc-date"><div class="bc-dl">Actual Start</div>
+            <div class="bc-dv" style="color:var(--orange)">${p.actStart}</div></div>`:''}
+        </div>
+        <div class="worker-section">
+          <div class="ws-title">Assigned Workers</div>
+          <div class="worker-chips">${assignedHtml}</div>
+          <button onclick="openAssignModal('${p.jobNo}',${p.seq},'${p.dept}','${p.processName.replace(/'/g,"\\'").substring(0,40)}')"
+            style="margin-top:8px;background:var(--navy);color:#fff;padding:7px 14px;border-radius:9px;
+            font-family:'Syne',sans-serif;font-size:11px;font-weight:700;border:none;cursor:pointer">
+            👷 Assign / Reassign Worker</button>
+        </div>`;
+      body.appendChild(div);
+    }
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
 }
 
-async function loadAdminDash(){
-  const body=document.getElementById('admin-dash-body');
-  body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
-  try{
-    const d=await api({action:'adminJobs'});
-    if(!d.success)throw new Error(d.error);
-    if(!d.jobs.length){body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No jobs yet</div></div>`;return;}
-    const tot=d.jobs.length,del=d.jobs.filter(j=>j.overdue>0).length;
-    body.innerHTML=`<div class="stat-row">
-      <div class="stat-box"><div class="stat-n" style="color:var(--navy)">${tot}</div><div class="stat-l">Active</div></div>
-      <div class="stat-box"><div class="stat-n" style="color:var(--red)">${del}</div><div class="stat-l">Delayed</div></div>
-      <div class="stat-box"><div class="stat-n" style="color:var(--green)">${tot-del}</div><div class="stat-l">On Track</div></div>
-    </div>`;
-    for(const j of d.jobs){
-      const div=document.createElement('div');div.className='admin-jcard';
-      let pills='';
-      for(const[dept,st]of Object.entries(j.deptSt||{})){
-        const cls=st.done===st.total?'dp-ok':st.overdue>0?'dp-del':st.active>0?'dp-act':'dp-pend';
-        const ic=st.done===st.total?'✅':st.overdue>0?'🔴':st.active>0?'🟠':'⚪';
-        pills+=`<div class="dp ${cls}">${ic} ${dept.substring(0,4)}</div>`;
+// ── ASSIGN MODAL ──
+async function openAssignModal(jobNo, seq, dept, procName) {
+  assignCtx = {jobNo, seq, dept};
+  document.getElementById('assign-modal-title').textContent = procName;
+  const mb = document.getElementById('assign-modal-body');
+  mb.innerHTML = `<div class="loading"><div class="spinner"></div> Loading workers...</div>`;
+  document.getElementById('assign-modal').classList.add('open');
+  try {
+    const d = await api({action:'getWorkersByDept', dept});
+    if (!d.success) throw new Error(d.error);
+    if (!d.workers.length) {
+      mb.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">
+        No workers registered for ${dept} dept.</div>`;
+      return;
+    }
+    mb.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+      Tap a FREE worker to assign them to this process.</div>`;
+    for (const w of d.workers) {
+      const isBusy = w.status === 'Busy';
+      const div = document.createElement('div');
+      div.className = `wchip ${isBusy?'busy':'free'}`;
+      div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 12px;margin-bottom:8px;border-radius:12px;';
+      div.innerHTML = `
+        <div>
+          <div class="wchip-name" style="font-size:13px">${w.name}</div>
+          <div class="wchip-status">${w.mobile} · ${w.dept1}${w.dept2?' / '+w.dept2:''}</div>
+          ${isBusy?`<div style="font-size:10px;color:var(--red);margin-top:2px">Busy on Job ${w.busyOn?.jobNo||''}</div>`:''}
+        </div>
+        <div style="font-size:11px;font-weight:700">${isBusy?'🔴 Busy':'🟢 Free'}</div>`;
+      if (!isBusy) div.onclick = () => assignWorker(w.workerId, w.name);
+      mb.appendChild(div);
+    }
+  } catch(e) {
+    mb.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`;
+  }
+}
+
+async function assignWorker(workerId, workerName) {
+  try {
+    const d = await apiPost({
+      action:'assignWorker',
+      jobNo:assignCtx.jobNo, seq:assignCtx.seq, dept:assignCtx.dept,
+      workerId, workerName, adminEmail:currentAdmin?.email||''
+    });
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ ${workerName} assigned!`);
+    // Show WhatsApp info
+    const wa = d.whatsapp;
+    showToast(`💬 Send WhatsApp to ${wa.mobile}: Job ${wa.jobNo} · ${wa.procName}`);
+    closeAssignModal();
+    loadAdminTab('today');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+function closeAssignModal() {
+  document.getElementById('assign-modal').classList.remove('open');
+  assignCtx = null;
+}
+
+// ── ADMIN JOBS ──
+async function loadAdminJobs(body) {
+  try {
+    const d = await api({action:'adminJobs'});
+    if (!d.success) throw new Error(d.error);
+    if (!d.jobs.length) {
+      body.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>
+        <div class="empty-txt">No jobs yet</div></div>`;
+      return;
+    }
+    const tot=d.jobs.length, del=d.jobs.filter(j=>j.overdue>0).length;
+    body.innerHTML = `
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-n" style="color:var(--navy)">${tot}</div><div class="stat-l">Total</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${del}</div><div class="stat-l">Delayed</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--green)">${tot-del}</div><div class="stat-l">On Track</div></div>
+      </div>`;
+    for (const j of d.jobs) {
+      const div = document.createElement('div');
+      div.className = 'admin-jcard';
+      let pills = '';
+      for (const [dept,st] of Object.entries(j.deptSt||{})) {
+        const cls = st.done===st.total?'dp-ok':st.overdue>0?'dp-del':st.active>0?'dp-act':'dp-pend';
+        const ic  = st.done===st.total?'✅':st.overdue>0?'🔴':st.active>0?'🟠':'⚪';
+        pills += `<div class="dp ${cls}">${ic} ${dept.substring(0,4)}</div>`;
       }
-      div.innerHTML=`
+      div.innerHTML = `
         <div class="ajc-top">
           <div><div class="ajc-no">${j.jobNo}</div><div class="ajc-cust">${j.cust||''} · ${j.type}</div></div>
           <div style="font-size:10px;font-weight:700;color:${j.overdue>0?'var(--red)':'var(--green)'}">
@@ -644,14 +942,230 @@ async function loadAdminDash(){
           <span>${j.done}/${j.total} done</span><span>${j.progress}%</span></div>`;
       body.appendChild(div);
     }
-  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;}
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;
+  }
 }
 
-function showToast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),3000);
+// ── WORKER MGMT ──
+async function loadWorkerMgmt(body) {
+  try {
+    const d = await api({action:'getAllWorkers'});
+    if (!d.success) throw new Error(d.error);
+
+    body.innerHTML = `
+      <button onclick="openAddWorker()"
+        style="background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;
+        width:100%;padding:13px;border-radius:13px;font-family:'Syne',sans-serif;
+        font-size:14px;font-weight:800;border:none;cursor:pointer;margin-bottom:14px;
+        box-shadow:0 4px 14px rgba(240,90,34,.3)">
+        ➕ Add New Worker</button>`;
+
+    if (!d.workers.length) {
+      body.innerHTML += `<div class="empty"><div class="empty-icon">👷</div>
+        <div class="empty-txt">No workers yet</div>
+        <div class="empty-sub">Add workers to assign them to processes</div></div>`;
+      return;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="section-title">All Workers (${d.workers.length})</div>`;
+
+    for (const w of d.workers) {
+      const row = document.createElement('div');
+      row.className = 'worker-row';
+      row.innerHTML = `
+        <div>
+          <div class="wr-info">
+            <div class="wr-name">${w.name}</div>
+            <div class="wr-meta">${w.mobile} · ${w.dept1}${w.dept2?' / '+w.dept2:''}</div>
+          </div>
+          <div class="wr-actions">
+            <button class="wr-btn reset" onclick="resetWorkerPin('${w.workerId}','${w.name}')">
+              🔄 Reset PIN</button>
+            <button class="wr-btn deact" onclick="toggleWorker('${w.workerId}','${w.status}','${w.name}')">
+              ${w.status==='Active'?'Deactivate':'Activate'}</button>
+          </div>
+        </div>
+        <div class="wr-status ${w.status.toLowerCase()}">${w.status}</div>`;
+      card.appendChild(row);
+    }
+    body.appendChild(card);
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;
+  }
 }
+
+async function resetWorkerPin(workerId, name) {
+  if (!confirm(`Reset PIN for ${name}?`)) return;
+  try {
+    const d = await apiPost({action:'resetPin', workerId, adminEmail:currentAdmin?.email||''});
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ PIN reset for ${name}. They must set new PIN on next login.`);
+    loadAdminTab('workers');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+async function toggleWorker(workerId, status, name) {
+  const active = status !== 'Active';
+  try {
+    const d = await apiPost({action:'toggleWorker', workerId, active});
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ ${name} ${active?'activated':'deactivated'}`);
+    loadAdminTab('workers');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+// ── ADD WORKER MODAL ──
+async function openAddWorker() {
+  // Load depts if not loaded
+  if (!allDepts.length) {
+    const d = await api({action:'getDepts'});
+    allDepts = d.depts || [];
+  }
+  const sel1 = document.getElementById('aw-dept1');
+  const sel2 = document.getElementById('aw-dept2');
+  sel1.innerHTML = '';
+  sel2.innerHTML = '<option value="">-- None --</option>';
+  for (const d of allDepts) {
+    sel1.innerHTML += `<option value="${d.name}">${d.name} · ${d.nameGu}</option>`;
+    sel2.innerHTML += `<option value="${d.name}">${d.name} · ${d.nameGu}</option>`;
+  }
+  document.getElementById('aw-name').value = '';
+  document.getElementById('aw-mobile').value = '';
+  document.getElementById('add-worker-modal').classList.add('open');
+}
+
+function closeAddWorker() {
+  document.getElementById('add-worker-modal').classList.remove('open');
+}
+
+async function addWorker() {
+  const name   = document.getElementById('aw-name').value.trim();
+  const mobile = document.getElementById('aw-mobile').value.trim();
+  const dept1  = document.getElementById('aw-dept1').value;
+  const dept2  = document.getElementById('aw-dept2').value;
+  if (!name||!mobile||!dept1) { showToast('⚠️ Fill all required fields'); return; }
+  if (mobile.length !== 10) { showToast('⚠️ 10-digit mobile required'); return; }
+  const btn = document.getElementById('aw-save');
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    const d = await apiPost({action:'createWorker', name, mobile, dept1, dept2,
+                              adminEmail:currentAdmin?.email||''});
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ ${name} added! They must open app and set PIN.`);
+    closeAddWorker();
+    loadAdminTab('workers');
+  } catch(e) { showToast('⚠️ '+e.message); }
+  finally { btn.textContent='Add Worker'; btn.disabled=false; }
+}
+
+// ── CREATE JOB ──
+function renderCreateJob(body) {
+  selType = '';
+  body.innerHTML = `
+    <div class="card">
+      <div class="section-title">Create New Job</div>
+      <div class="field-label">Job Number</div>
+      <input class="field-input" id="inp-jobno" placeholder="e.g. BOI-2024-001">
+      <div class="field-label">Product Type</div>
+      <div class="type-row">
+        <div class="type-btn" id="btn-boiler" onclick="selectType('Boiler')">
+          Boiler<div style="font-size:9px;font-weight:400;margin-top:2px">66 processes</div></div>
+        <div class="type-btn" id="btn-autoclave" onclick="selectType('Autoclave')">
+          Autoclave<div style="font-size:9px;font-weight:400;margin-top:2px">56 processes</div></div>
+      </div>
+      <div class="field-label">Customer / Party Name</div>
+      <input class="field-input" id="inp-customer" placeholder="Customer name">
+      <div class="field-label">Start Date</div>
+      <input class="field-input" id="inp-date" type="date">
+      <button class="btn-main" id="btn-create" onclick="createJob()" disabled>
+        ⚡ Generate Schedule & Notify All Depts</button>
+    </div>
+    <div id="create-result" style="display:none">
+      <div class="card" style="border:1.5px solid var(--green);background:#f0fdf4">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--green);margin-bottom:8px">✅ Job Created!</div>
+        <div id="create-result-body" style="font-size:12px;line-height:1.8"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">💬 WhatsApp Messages — Copy & Send</div>
+        <div id="wa-messages"></div>
+      </div>
+    </div>`;
+
+  ['inp-jobno','inp-customer','inp-date'].forEach(id =>
+    document.getElementById(id).addEventListener('input', checkCreateReady));
+}
+
+function selectType(type) {
+  selType = type;
+  document.getElementById('btn-boiler').classList.toggle('sel', type==='Boiler');
+  document.getElementById('btn-autoclave').classList.toggle('sel', type==='Autoclave');
+  checkCreateReady();
+}
+
+function checkCreateReady() {
+  const el = document.getElementById('btn-create');
+  if (!el) return;
+  el.disabled = !(document.getElementById('inp-jobno')?.value.trim() && selType &&
+                  document.getElementById('inp-customer')?.value.trim() &&
+                  document.getElementById('inp-date')?.value);
+}
+
+async function createJob() {
+  const jobNo    = document.getElementById('inp-jobno').value.trim();
+  const customer = document.getElementById('inp-customer').value.trim();
+  const date     = document.getElementById('inp-date').value;
+  const btn      = document.getElementById('btn-create');
+  btn.disabled = true; btn.textContent = '⏳ Creating...';
+  document.getElementById('create-result').style.display = 'none';
+  try {
+    const d = await apiPost({action:'createJob', jobNo, productType:selType,
+                              customerName:customer, startDate:date});
+    if (!d.success) throw new Error(d.error);
+    document.getElementById('create-result-body').innerHTML =
+      `<b>${d.jobNo}</b> · ${d.productType}<br>Customer: ${d.customerName}<br>
+       Schedule rows: ${d.totalProcessRows} · Depts: ${Object.keys(d.waMessages).length}`;
+    let waHtml = '';
+    for (const [dept,wa] of Object.entries(d.waMessages)) {
+      waHtml += `<div style="background:#e7f8e8;border-radius:10px;padding:10px;margin-bottom:8px;border:1px solid #c3e6c3">
+        <div style="font-weight:700;color:#1a3a1a;font-size:12px;margin-bottom:4px">
+          ${ICONS[dept]||'🏭'} ${dept} — ${wa.deptGu} (${wa.count} processes)</div>
+        <div style="font-size:10px;color:#2d4a2d;line-height:1.8">
+          🟢 First: Seq ${wa.firstProc.seq} · ${wa.firstProc.name.substring(0,45)}<br>
+          &nbsp;&nbsp;&nbsp;${wa.firstProc.start} → ${wa.firstProc.end}<br>
+          🔴 Last: &nbsp;Seq ${wa.lastProc.seq} · ${wa.lastProc.name.substring(0,45)}<br>
+          &nbsp;&nbsp;&nbsp;${wa.lastProc.start} → ${wa.lastProc.end}
+        </div></div>`;
+    }
+    document.getElementById('wa-messages').innerHTML = waHtml;
+    document.getElementById('create-result').style.display = 'block';
+    showToast('✅ Job created!');
+  } catch(e) { showToast('⚠️ '+e.message); }
+  btn.disabled = false; btn.textContent = '⚡ Generate Schedule & Notify All Depts';
+  checkCreateReady();
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ── AUTO LOGIN ──
+window.onload = function() {
+  // Auto-restore session
+  if (currentWorker) {
+    loadWorkerHome();
+    showScreen('scr-worker-home');
+  } else if (currentAdmin) {
+    document.getElementById('admin-email-display').textContent = currentAdmin.email;
+    loadAdminTab('today');
+    showScreen('scr-admin-home');
+  }
+};
 </script>
 </body>
 </html>

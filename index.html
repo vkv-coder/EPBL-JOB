@@ -159,7 +159,7 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 
 /* ADMIN TABS */
 .admin-tabs{display:flex;gap:0;background:rgba(255,255,255,.1);border-radius:12px;padding:4px;margin-bottom:0}
-.admin-tab{flex:1;padding:9px 6px;text-align:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;border-radius:9px;transition:all .2s}
+.admin-tab{flex:1;padding:8px 4px;text-align:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;border-radius:9px;transition:all .2s}
 .admin-tab.active{background:#fff;color:var(--navy)}
 
 /* WORKER MGMT */
@@ -367,6 +367,7 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
     </div>
     <div class="admin-tabs" style="margin-top:12px">
       <div class="admin-tab active" onclick="adminTab('today')" id="tab-today">📋 Today</div>
+      <div class="admin-tab" onclick="adminTab('tomorrow')" id="tab-tomorrow">🌅 Tomorrow</div>
       <div class="admin-tab" onclick="adminTab('jobs')" id="tab-jobs">🏭 Jobs</div>
       <div class="admin-tab" onclick="adminTab('workers')" id="tab-workers">👷 Workers</div>
       <div class="admin-tab" onclick="adminTab('create')" id="tab-create">➕ New</div>
@@ -766,7 +767,7 @@ async function saveRemark() {
 // ── ADMIN TABS ──
 function adminTab(tab) {
   adminCurrentTab = tab;
-  ['today','jobs','workers','create'].forEach(t => {
+  ['today','tomorrow','jobs','workers','create'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
   loadAdminTab(tab);
@@ -777,6 +778,7 @@ async function loadAdminTab(tab) {
   body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
 
   if (tab === 'today') await loadTodayBoard(body);
+  else if (tab === 'tomorrow') await loadTomorrowBoard(body);
   else if (tab === 'jobs') await loadAdminJobs(body);
   else if (tab === 'workers') await loadWorkerMgmt(body);
   else if (tab === 'create') renderCreateJob(body);
@@ -840,47 +842,30 @@ async function loadTodayBoard(body) {
     if (d.board?.length) {
       const sec = document.createElement('div');
       sec.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
-        color:var(--navy);margin:10px 0 8px;display:flex;align-items:center;gap:6px">
-        📋 ASSIGNED (${d.board.length})</div>`;
+        color:var(--navy);margin:10px 0 8px;display:flex;align-items:center;
+        justify-content:space-between">
+        <span>📋 ASSIGNED (${d.board.length})</span>
+        <button onclick="refreshSheetColors()"
+          style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted);
+          padding:4px 10px;border-radius:8px;font-size:10px;font-weight:600;cursor:pointer">
+          🎨 Refresh Sheet Colors</button>
+        </div>`;
       body.appendChild(sec);
-
-      for (const p of d.board) {
-        const cls  = p.isOverdue?'overdue':p.isActive?'active':'today';
-        const bdrColor = p.isOverdue?'var(--red)':p.isActive?'var(--green)':'var(--orange)';
-        const badgeText = p.isOverdue?'🔴 Overdue':p.isActive?'🟢 Active':'🟠 Today';
-        const workers = p.assignedWorkers.map(w=>w.workerName).join(', ');
-
-        const div = document.createElement('div');
-        div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};border-radius:12px;
-          padding:10px 12px;margin-bottom:7px;box-shadow:0 2px 8px rgba(13,27,62,.07)`;
-        div.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
-              ${p.jobNo} · S${p.seq}</div>
-            <div style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;
-              background:${p.isOverdue?'#fef2f2':p.isActive?'#f0fdf4':'#fff7ed'};
-              color:${bdrColor}">${badgeText}</div>
-          </div>
-          <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">${p.processName.substring(0,50)}</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
-            ${ICONS[p.dept]||'🏭'} ${p.dept} · ${p.durHrs}h · ${p.planStart}
-            ${p.actStart?'· Started: '+p.actStart:''}
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:10px;color:var(--blue2);font-weight:600">👷 ${workers||'—'}</div>
-            <button onclick="openAssignModal('${p.jobNo}',${p.seq},'${p.dept}','${p.processName.replace(/'/g,"\\'").substring(0,40)}')"
-              style="background:var(--bg);border:1.5px solid var(--border);color:var(--navy);
-              padding:5px 10px;border-radius:8px;font-family:'Syne',sans-serif;
-              font-size:10px;font-weight:700;border:none;cursor:pointer">
-              ↩ Reassign</button>
-          </div>`;
-        body.appendChild(div);
-      }
+      renderBoardCards(body, d.board.map(p=>({...p, assignedWorkers:p.assignedWorkers||[]})), false);
     }
   } catch(e) {
     body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
       <div class="empty-txt">${e.message}</div></div>`;
   }
+}
+
+// ── REFRESH SHEET COLORS ──
+async function refreshSheetColors() {
+  showToast('🎨 Updating sheet colours...');
+  try {
+    const d = await api({action:'colorSchedule'});
+    if (d.success) showToast('✅ Sheet colours updated!');
+  } catch(e) { showToast('⚠️ '+e.message); }
 }
 
 // ── DELETE JOB ──
@@ -894,7 +879,94 @@ async function deleteJob(jobNo) {
   } catch(e) { showToast('⚠️ '+e.message); }
 }
 
-// ── ASSIGN MODAL ──
+// ── TOMORROW BOARD ──
+async function loadTomorrowBoard(body) {
+  try {
+    const d = await api({action:'getTomorrowBoard'});
+    if (!d.success) throw new Error(d.error);
+
+    if (!d.board.length) {
+      body.innerHTML = `<div class="empty"><div class="empty-icon">✅</div>
+        <div class="empty-txt">Nothing planned for tomorrow</div>
+        <div class="empty-sub">No processes starting tomorrow</div></div>`;
+      return;
+    }
+
+    // Stat row
+    const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate()+1);
+    const dateStr = tomorrowDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
+    body.innerHTML = `
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
+        color:var(--muted);margin-bottom:12px">📅 ${dateStr}</div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-n" style="color:var(--navy)">${d.total}</div><div class="stat-l">Total</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${d.unassigned}</div><div class="stat-l">Unassigned</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.carryFwd}</div><div class="stat-l">Carry Fwd</div></div>
+      </div>`;
+
+    // Carry-forward section
+    const carryFwd = d.board.filter(p=>p.isCarryFwd);
+    if (carryFwd.length) {
+      const sec = document.createElement('div');
+      sec.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
+        color:var(--red);margin-bottom:8px">🔴 CARRY FORWARD (${carryFwd.length}) — Not started from previous days</div>`;
+      body.appendChild(sec);
+      renderBoardCards(body, carryFwd, true);
+    }
+
+    // Tomorrow section
+    const tomorrow = d.board.filter(p=>p.isTomorrow);
+    if (tomorrow.length) {
+      const sec = document.createElement('div');
+      sec.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
+        color:var(--blue2);margin:10px 0 8px">🌅 STARTING TOMORROW (${tomorrow.length})</div>`;
+      body.appendChild(sec);
+      renderBoardCards(body, tomorrow, false);
+    }
+
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
+
+// Shared card renderer for Today + Tomorrow boards
+function renderBoardCards(container, procs, isCarryFwd) {
+  for (const p of procs) {
+    const isAssigned = p.assignedWorkers && p.assignedWorkers.length > 0;
+    const bdrColor = isCarryFwd ? 'var(--red)' : isAssigned ? 'var(--blue2)' : 'var(--orange)';
+    const workers  = isAssigned ? p.assignedWorkers.map(w=>w.workerName).join(', ') : null;
+
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};border-radius:12px;
+      padding:10px 12px;margin-bottom:7px;box-shadow:0 2px 8px rgba(13,27,62,.07)`;
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
+          ${p.jobNo} · S${p.seq}</div>
+        <div style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;
+          background:${isCarryFwd?'#fef2f2':isAssigned?'#dbeafe':'#fff7ed'};
+          color:${isCarryFwd?'var(--red)':isAssigned?'var(--blue2)':'var(--orange)'}">
+          ${isCarryFwd?'🔴 Carry Fwd':isAssigned?'🔵 Assigned':'🟠 Unassigned'}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">
+        ${p.processName.substring(0,55)}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+        ${ICONS[p.dept]||'🏭'} ${p.dept} · ${p.durHrs}h · ${p.planStart}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:10px;font-weight:600;color:${isAssigned?'var(--blue2)':'var(--muted)'}">
+          👷 ${workers||'Not assigned yet'}</div>
+        <button onclick="openAssignModal('${p.jobNo}',${p.seq},'${p.dept}','${p.processName.replace(/'/g,"\\'").substring(0,40)}')"
+          style="background:${isAssigned?'var(--bg)':'var(--orange)'};
+          color:${isAssigned?'var(--navy)':'#fff'};
+          border:${isAssigned?'1.5px solid var(--border)':'none'};
+          padding:5px 10px;border-radius:8px;font-family:'Syne',sans-serif;
+          font-size:10px;font-weight:700;cursor:pointer">
+          ${isAssigned?'↩ Change':'👷 Assign'}</button>
+      </div>`;
+    container.appendChild(div);
+  }
+}
 async function openAssignModal(jobNo, seq, dept, procName) {
   assignCtx = {jobNo, seq, dept};
   document.getElementById('assign-modal-title').textContent = procName;

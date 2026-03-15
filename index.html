@@ -785,64 +785,113 @@ async function loadAdminTab(tab) {
 // ── TODAY BOARD ──
 async function loadTodayBoard(body) {
   try {
-    const d = await api({action:'getTodayBoard'});
+    // Load assigned board + unassigned simultaneously
+    const [d, u] = await Promise.all([
+      api({action:'getTodayBoard'}),
+      api({action:'getUnassignedToday'})
+    ]);
     if (!d.success) throw new Error(d.error);
 
-    if (!d.board.length) {
+    const totalProcs = (d.board?.length||0) + (u.unassigned?.length||0);
+    if (!totalProcs) {
       body.innerHTML = `<div class="empty"><div class="empty-icon">✅</div>
         <div class="empty-txt">Nothing due today</div>
         <div class="empty-sub">All processes on schedule</div></div>`;
       return;
     }
 
+    // Stat row
     body.innerHTML = `
       <div class="stat-row">
-        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.overdue}</div><div class="stat-l">Overdue</div></div>
-        <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${d.today}</div><div class="stat-l">Today</div></div>
-        <div class="stat-box"><div class="stat-n" style="color:var(--green)">${d.active}</div><div class="stat-l">Active</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.overdue||0}</div><div class="stat-l">Overdue</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${d.today||0}</div><div class="stat-l">Today</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--green)">${d.active||0}</div><div class="stat-l">Active</div></div>
       </div>`;
 
-    for (const p of d.board) {
-      const cls = p.isOverdue?'overdue':p.isActive?'active':'today';
-      const badgeText = p.isOverdue?'🔴 Overdue':p.isActive?'🟢 Active':'🟠 Today';
-      const assignedHtml = p.assignedWorkers.length
-        ? p.assignedWorkers.map(w=>`<span class="wchip assigned"><span class="wchip-name">${w.workerName}</span></span>`).join('')
-        : `<span style="font-size:10px;color:var(--muted)">No workers assigned yet</span>`;
-
-      const div = document.createElement('div');
-      div.className = `board-card ${cls}`;
-      div.innerHTML = `
-        <div class="bc-top">
-          <div>
-            <div class="bc-job">${p.jobNo} · Seq ${p.seq}</div>
-            <div style="font-size:10px;color:var(--muted)">${p.customer} · ${p.productType}</div>
+    // ── UNASSIGNED section (highlighted in amber) ──
+    if (u.unassigned?.length) {
+      const sec = document.createElement('div');
+      sec.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
+        color:var(--orange);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        ⚠️ UNASSIGNED (${u.unassigned.length}) — Needs worker allocation</div>`;
+      body.appendChild(sec);
+      for (const p of u.unassigned) {
+        const div = document.createElement('div');
+        div.style.cssText = `background:#fff7ed;border-left:4px solid var(--orange);border-radius:12px;
+          padding:10px 12px;margin-bottom:7px;box-shadow:0 2px 8px rgba(240,90,34,.12)`;
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
+              ${p.jobNo} · S${p.seq}</div>
+            <div style="font-size:9px;font-weight:700;background:#fef2f2;color:var(--red);
+              padding:2px 7px;border-radius:6px">${p.isOverdue?'🔴 Overdue':'🟠 Today'}</div>
           </div>
-          <div class="bc-badge ${cls}">${badgeText}</div>
-        </div>
-        <div class="bc-proc">${p.processName}</div>
-        <div class="bc-dept">${ICONS[p.dept]||'🏭'} ${p.dept} · ${p.durHrs} hrs</div>
-        <div class="bc-dates">
-          <div class="bc-date"><div class="bc-dl">Plan Start</div>
-            <div class="bc-dv ${p.isOverdue?'red':''}">${p.planStart}</div></div>
-          <div class="bc-date"><div class="bc-dl">Plan End</div>
-            <div class="bc-dv">${p.planEnd}</div></div>
-          ${p.actStart?`<div class="bc-date"><div class="bc-dl">Actual Start</div>
-            <div class="bc-dv" style="color:var(--orange)">${p.actStart}</div></div>`:''}
-        </div>
-        <div class="worker-section">
-          <div class="ws-title">Assigned Workers</div>
-          <div class="worker-chips">${assignedHtml}</div>
+          <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">${p.processName.substring(0,50)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:7px">${ICONS[p.dept]||'🏭'} ${p.dept} · ${p.durHrs}h · ${p.planStart}</div>
           <button onclick="openAssignModal('${p.jobNo}',${p.seq},'${p.dept}','${p.processName.replace(/'/g,"\\'").substring(0,40)}')"
-            style="margin-top:8px;background:var(--navy);color:#fff;padding:7px 14px;border-radius:9px;
+            style="background:var(--orange);color:#fff;padding:6px 14px;border-radius:8px;
             font-family:'Syne',sans-serif;font-size:11px;font-weight:700;border:none;cursor:pointer">
-            👷 Assign / Reassign Worker</button>
-        </div>`;
-      body.appendChild(div);
+            👷 Assign Worker</button>`;
+        body.appendChild(div);
+      }
+    }
+
+    // ── ASSIGNED / ACTIVE section ──
+    if (d.board?.length) {
+      const sec = document.createElement('div');
+      sec.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
+        color:var(--navy);margin:10px 0 8px;display:flex;align-items:center;gap:6px">
+        📋 ASSIGNED (${d.board.length})</div>`;
+      body.appendChild(sec);
+
+      for (const p of d.board) {
+        const cls  = p.isOverdue?'overdue':p.isActive?'active':'today';
+        const bdrColor = p.isOverdue?'var(--red)':p.isActive?'var(--green)':'var(--orange)';
+        const badgeText = p.isOverdue?'🔴 Overdue':p.isActive?'🟢 Active':'🟠 Today';
+        const workers = p.assignedWorkers.map(w=>w.workerName).join(', ');
+
+        const div = document.createElement('div');
+        div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};border-radius:12px;
+          padding:10px 12px;margin-bottom:7px;box-shadow:0 2px 8px rgba(13,27,62,.07)`;
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
+              ${p.jobNo} · S${p.seq}</div>
+            <div style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;
+              background:${p.isOverdue?'#fef2f2':p.isActive?'#f0fdf4':'#fff7ed'};
+              color:${bdrColor}">${badgeText}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">${p.processName.substring(0,50)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+            ${ICONS[p.dept]||'🏭'} ${p.dept} · ${p.durHrs}h · ${p.planStart}
+            ${p.actStart?'· Started: '+p.actStart:''}
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:10px;color:var(--blue2);font-weight:600">👷 ${workers||'—'}</div>
+            <button onclick="openAssignModal('${p.jobNo}',${p.seq},'${p.dept}','${p.processName.replace(/'/g,"\\'").substring(0,40)}')"
+              style="background:var(--bg);border:1.5px solid var(--border);color:var(--navy);
+              padding:5px 10px;border-radius:8px;font-family:'Syne',sans-serif;
+              font-size:10px;font-weight:700;border:none;cursor:pointer">
+              ↩ Reassign</button>
+          </div>`;
+        body.appendChild(div);
+      }
     }
   } catch(e) {
     body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
       <div class="empty-txt">${e.message}</div></div>`;
   }
+}
+
+// ── DELETE JOB ──
+async function deleteJob(jobNo) {
+  if (!confirm(`Delete job ${jobNo} completely?\nThis removes ALL schedule rows and assignments.\nThis cannot be undone!`)) return;
+  try {
+    const d = await apiPost({action:'deleteJob', jobNo, adminEmail:currentAdmin?.email||''});
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ Job ${jobNo} deleted`);
+    loadAdminTab('jobs');
+  } catch(e) { showToast('⚠️ '+e.message); }
 }
 
 // ── ASSIGN MODAL ──
@@ -861,20 +910,33 @@ async function openAssignModal(jobNo, seq, dept, procName) {
       return;
     }
     mb.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px">
-      Tap a FREE worker to assign them to this process.</div>`;
+      🟢 Free = tap to assign &nbsp;·&nbsp; 🔴 Busy = already on a job<br>
+      To force reassign a busy worker, tap their name anyway.</div>`;
+
     for (const w of d.workers) {
       const isBusy = w.status === 'Busy';
       const div = document.createElement('div');
-      div.className = `wchip ${isBusy?'busy':'free'}`;
-      div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 12px;margin-bottom:8px;border-radius:12px;';
+      div.style.cssText = `display:flex;align-items:center;justify-content:space-between;
+        width:100%;padding:10px 12px;margin-bottom:8px;border-radius:12px;cursor:pointer;
+        background:${isBusy?'#fef2f2':'#f0fdf4'};border:1.5px solid ${isBusy?'#fecaca':'#bbf7d0'}`;
       div.innerHTML = `
         <div>
-          <div class="wchip-name" style="font-size:13px">${w.name}</div>
-          <div class="wchip-status">${w.mobile} · ${w.dept1}${w.dept2?' / '+w.dept2:''}</div>
-          ${isBusy?`<div style="font-size:10px;color:var(--red);margin-top:2px">Busy on Job ${w.busyOn?.jobNo||''}</div>`:''}
+          <div style="font-size:13px;font-weight:700;color:var(--navy)">${w.name}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">${w.mobile} · ${w.dept1}${w.dept2?' / '+w.dept2:''}</div>
+          ${isBusy?`<div style="font-size:10px;color:var(--red);margin-top:2px;font-weight:600">
+            Busy: Job ${w.busyOn?.jobNo||''} Seq ${w.busyOn?.seq||''}</div>`:''}
         </div>
-        <div style="font-size:11px;font-weight:700">${isBusy?'🔴 Busy':'🟢 Free'}</div>`;
-      if (!isBusy) div.onclick = () => assignWorker(w.workerId, w.name);
+        <div style="font-size:12px;font-weight:700;color:${isBusy?'var(--red)':'var(--green)'}">
+          ${isBusy?'🔴 Busy':'🟢 Free'}</div>`;
+      div.onclick = () => {
+        if (isBusy) {
+          if (confirm(`${w.name} is busy on Job ${w.busyOn?.jobNo}.\nForce assign to this process?\nTheir current assignment will be marked Reassigned.`)) {
+            forceAssignWorker(w.workerId, w.name);
+          }
+        } else {
+          assignWorker(w.workerId, w.name);
+        }
+      };
       mb.appendChild(div);
     }
   } catch(e) {
@@ -894,6 +956,22 @@ async function assignWorker(workerId, workerName) {
     // Show WhatsApp info
     const wa = d.whatsapp;
     showToast(`💬 Send WhatsApp to ${wa.mobile}: Job ${wa.jobNo} · ${wa.procName}`);
+    closeAssignModal();
+    loadAdminTab('today');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+async function forceAssignWorker(workerId, workerName) {
+  try {
+    const reason = 'Force assigned by admin';
+    const d = await apiPost({
+      action:'forceReassign',
+      jobNo:assignCtx.jobNo, seq:assignCtx.seq, dept:assignCtx.dept,
+      oldWorkerId:workerId, newWorkerId:workerId, newWorkerName:workerName,
+      adminEmail:currentAdmin?.email||'', reason
+    });
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ ${workerName} force assigned!`);
     closeAssignModal();
     loadAdminTab('today');
   } catch(e) { showToast('⚠️ '+e.message); }
@@ -933,8 +1011,13 @@ async function loadAdminJobs(body) {
       div.innerHTML = `
         <div class="ajc-top">
           <div><div class="ajc-no">${j.jobNo}</div><div class="ajc-cust">${j.cust||''} · ${j.type}</div></div>
-          <div style="font-size:10px;font-weight:700;color:${j.overdue>0?'var(--red)':'var(--green)'}">
-            ${j.overdue>0?'⚠️ '+j.overdue+' overdue':'✅ On track'}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="font-size:10px;font-weight:700;color:${j.overdue>0?'var(--red)':'var(--green)'}">
+              ${j.overdue>0?'⚠️ '+j.overdue+' overdue':'✅ On track'}</div>
+            <button onclick="deleteJob('${j.jobNo}')"
+              style="background:#fef2f2;color:var(--red);padding:3px 8px;border-radius:6px;
+              font-size:10px;font-weight:700;border:none;cursor:pointer">🗑 Delete</button>
+          </div>
         </div>
         <div class="dept-pills">${pills}</div>
         <div class="prog-bar"><div class="prog-fill" style="width:${j.progress}%"></div></div>

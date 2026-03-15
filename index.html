@@ -330,12 +330,102 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
       <div><div class="tb-title" id="wh-title">My Jobs</div><div class="tb-sub" id="wh-sub"></div></div>
       <div style="display:flex;gap:6px">
         <button class="lang-btn" onclick="toggleLang()">🌐</button>
-        <button class="back-btn" onclick="workerLogout()">Logout</button>
+        <button class="back-btn" onclick="showScreen('scr-worker-menu')">☰ Menu</button>
       </div>
     </div>
   </div>
   <div class="body" id="worker-jobs-body">
     <div class="loading"><div class="spinner"></div> Loading your jobs...</div>
+  </div>
+</div>
+
+<!-- ═══ WORKER MENU ═══ -->
+<div class="screen" id="scr-worker-menu">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title" id="wm-name">Worker Menu</div><div class="tb-sub" id="wm-dept"></div></div>
+      <button class="back-btn" onclick="showScreen('scr-worker-home')">← Back</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="card" style="padding:8px">
+      <div onclick="showScreen('scr-worker-home')"
+        style="display:flex;align-items:center;gap:12px;padding:14px 10px;cursor:pointer;border-radius:10px">
+        <span style="font-size:22px">📋</span>
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">My Assigned Jobs</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">View current & upcoming work</div></div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:0 10px"></div>
+      <div onclick="loadWorkerHistory()"
+        style="display:flex;align-items:center;gap:12px;padding:14px 10px;cursor:pointer;border-radius:10px">
+        <span style="font-size:22px">📊</span>
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">My History</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">Completed & delayed processes with remarks</div></div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:0 10px"></div>
+      <div onclick="showChangePinScreen()"
+        style="display:flex;align-items:center;gap:12px;padding:14px 10px;cursor:pointer;border-radius:10px">
+        <span style="font-size:22px">🔐</span>
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">Change PIN</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">Update your login PIN</div></div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:0 10px"></div>
+      <div onclick="workerLogout()"
+        style="display:flex;align-items:center;gap:12px;padding:14px 10px;cursor:pointer;border-radius:10px">
+        <span style="font-size:22px">🚪</span>
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--red)">Logout</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">Sign out of this device</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER HISTORY ═══ -->
+<div class="screen" id="scr-worker-history">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title">📊 My History</div><div class="tb-sub" id="wh-stats"></div></div>
+      <button class="back-btn" onclick="showScreen('scr-worker-menu')">← Menu</button>
+    </div>
+  </div>
+  <div class="body" id="worker-history-body">
+    <div class="loading"><div class="spinner"></div> Loading history...</div>
+  </div>
+</div>
+
+<!-- ═══ CHANGE PIN ═══ -->
+<div class="screen" id="scr-change-pin">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title">🔐 Change PIN</div></div>
+      <button class="back-btn" onclick="showScreen('scr-worker-menu')">← Back</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="card">
+      <div class="field-label">Current PIN</div>
+      <div class="pin-row">
+        <input class="pin-box" id="op1" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'op2')">
+        <input class="pin-box" id="op2" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'op3')" onkeydown="pinBack(event,this,'op1')">
+        <input class="pin-box" id="op3" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'op4')" onkeydown="pinBack(event,this,'op2')">
+        <input class="pin-box" id="op4" type="password" maxlength="1" inputmode="numeric" onkeydown="pinBack(event,this,'op3')">
+      </div>
+      <div class="field-label">New PIN</div>
+      <div class="pin-row">
+        <input class="pin-box" id="np1" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'np2')">
+        <input class="pin-box" id="np2" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'np3')" onkeydown="pinBack(event,this,'np1')">
+        <input class="pin-box" id="np3" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'np4')" onkeydown="pinBack(event,this,'np2')">
+        <input class="pin-box" id="np4" type="password" maxlength="1" inputmode="numeric" onkeydown="pinBack(event,this,'np3')">
+      </div>
+      <div class="field-label">Confirm New PIN</div>
+      <div class="pin-row">
+        <input class="pin-box" id="cp1" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'cp2')">
+        <input class="pin-box" id="cp2" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'cp3')" onkeydown="pinBack(event,this,'cp1')">
+        <input class="pin-box" id="cp3" type="password" maxlength="1" inputmode="numeric" oninput="pinNext(this,'cp4')" onkeydown="pinBack(event,this,'cp2')">
+        <input class="pin-box" id="cp4" type="password" maxlength="1" inputmode="numeric" onkeydown="pinBack(event,this,'cp3')">
+      </div>
+      <button class="btn-main" onclick="doChangePin()">Update PIN</button>
+    </div>
   </div>
 </div>
 
@@ -587,6 +677,8 @@ async function loadWorkerHome() {
   if (!currentWorker) return;
   document.getElementById('wh-title').textContent = '👷 '+currentWorker.name;
   document.getElementById('wh-sub').textContent = currentWorker.dept1 + (currentWorker.dept2?' · '+currentWorker.dept2:'');
+  document.getElementById('wm-name').textContent = currentWorker.name;
+  document.getElementById('wm-dept').textContent = currentWorker.dept1 + (currentWorker.dept2?' · '+currentWorker.dept2:'');
   const body = document.getElementById('worker-jobs-body');
   body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading your jobs...</div>`;
   try {
@@ -648,13 +740,116 @@ function selectJob(j) {
   showScreen('scr-procs');
 }
 
+// ── WORKER MENU ──
+function showChangePinScreen() {
+  clearPin('op'); clearPin('np'); clearPin('cp');
+  showScreen('scr-change-pin');
+}
+
+async function doChangePin() {
+  const oldPin = getPin('op');
+  const newPin = getPin('np');
+  const conPin = getPin('cp');
+  if (oldPin.length!==4||newPin.length!==4) { showToast('⚠️ Enter 4-digit PINs'); return; }
+  if (newPin!==conPin) { showToast('⚠️ New PINs do not match'); return; }
+  try {
+    const d = await apiPost({action:'changePin',
+      workerId:currentWorker.workerId, oldPin, newPin});
+    if (!d.success) throw new Error(d.error);
+    showToast('✅ PIN changed successfully!');
+    showScreen('scr-worker-menu');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+// ── WORKER HISTORY ──
+async function loadWorkerHistory() {
+  showScreen('scr-worker-history');
+  const body = document.getElementById('worker-history-body');
+  body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading history...</div>`;
+  try {
+    const d = await api({action:'getWorkerHistory', workerId:currentWorker.workerId});
+    if (!d.success) throw new Error(d.error);
+
+    document.getElementById('wh-stats').textContent =
+      `${d.total} total · ${d.completed} done · ${d.delayed} delayed · ${d.ongoing} ongoing`;
+
+    if (!d.history.length) {
+      body.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>
+        <div class="empty-txt">No history yet</div>
+        <div class="empty-sub">Completed processes will appear here</div></div>`;
+      return;
+    }
+
+    // Summary stats
+    body.innerHTML = `
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-n" style="color:var(--navy)">${d.total}</div><div class="stat-l">Assigned</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--green)">${d.completed}</div><div class="stat-l">Completed</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.delayed}</div><div class="stat-l">Delayed</div></div>
+      </div>`;
+
+    for (const h of d.history) {
+      const isOngoing = h.status === 'In Progress';
+      const isPending = h.status === 'Pending';
+      const isDone    = h.status === 'Done';
+      const bdrColor  = isOngoing?'var(--orange)':h.isDelayed?'var(--red)':isDone?'var(--green)':'var(--grey)';
+      const statusBadge = isOngoing?'🟠 Ongoing':isPending?'⚪ Pending':
+                          h.isDelayed?'🔴 Delayed':'🟢 On Time';
+      const statusBg  = isOngoing?'#fff7ed':isPending?'#f1f5f9':
+                        h.isDelayed?'#fef2f2':'#f0fdf4';
+      const statusFg  = isOngoing?'var(--orange)':isPending?'var(--grey)':
+                        h.isDelayed?'var(--red)':'var(--green)';
+
+      const div = document.createElement('div');
+      div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};
+        border-radius:12px;padding:11px 13px;margin-bottom:8px;
+        box-shadow:0 2px 8px rgba(13,27,62,.06)`;
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
+            ${h.jobNo} · Seq ${h.seq}</div>
+          <div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px;
+            background:${statusBg};color:${statusFg}">${statusBadge}</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px">
+          ${h.processName.substring(0,55)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+          ${ICONS[h.dept]||'🏭'} ${h.dept} · ${h.customer}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:${h.remarks?'6px':'0'}">
+          <div style="background:var(--bg);border-radius:7px;padding:5px 7px">
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase">Plan</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text);margin-top:1px">
+              ${h.planStart}<br>→ ${h.planEnd}</div>
+          </div>
+          <div style="background:var(--bg);border-radius:7px;padding:5px 7px">
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase">Actual</div>
+            <div style="font-size:10px;font-weight:600;color:${h.isDelayed?'var(--red)':isOngoing?'var(--orange)':'var(--green)'};margin-top:1px">
+              ${h.actStart||'—'}<br>→ ${h.actEnd||'Running...'}
+              ${h.delayHrs>0?`<span style="color:var(--red);font-weight:700"> (+${h.delayHrs}h late)</span>`:''}
+              ${isDone&&!h.isDelayed?`<span style="color:var(--green);font-weight:700"> ✓</span>`:''}
+            </div>
+          </div>
+        </div>
+        ${h.remarks?`<div style="background:#f8f9ff;border-radius:8px;padding:6px 9px;
+          font-size:10px;color:var(--text);border-left:3px solid var(--blue2)">
+          📝 <em>${h.remarks}</em></div>`:''}`;
+      body.appendChild(div);
+    }
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
+
 // ── PROCESS LIST ──
 async function loadProcs() {
   const body = document.getElementById('proc-list-body');
   body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
   try {
     const dept = currentDept || (currentWorker ? currentWorker.dept1 : '');
-    const d = await api({action:'getJobProcs', jobNo:currentJob.jobNo, dept});
+    const params = {action:'getJobProcs', jobNo:currentJob.jobNo, dept};
+    if (currentWorker) params.workerId = currentWorker.workerId;
+    const d = await api(params);
     if (!d.success) throw new Error(d.error);
     body.innerHTML = `
       <div class="job-strip">

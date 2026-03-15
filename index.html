@@ -1328,7 +1328,7 @@ async function loadWorkerBoard(body) {
                 <div style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:5px;
                   background:${a.status==='Done'?'#f0fdf4':a.status==='In Progress'?'#fff7ed':'#fef2f2'};
                   color:${a.status==='Done'?'var(--green)':a.status==='In Progress'?'var(--orange)':'var(--red)'}">
-                  ${a.status==='Done'?'✅ Done':a.status==='In Progress'?'🟠 Running':'🔴 Not Started'}</div>
+                  ${a.status==='Done'?'✅ Done':a.status==='In Progress'?'🟠 Running':a.status==='Pending'&&a.planStart?'🔴 Overdue':'⚪ Pending'}</div>
               </div>
               <div style="font-size:10px;color:var(--text);font-weight:600;margin-top:2px">
                 ${(a.processName||'').substring(0,45)}</div>

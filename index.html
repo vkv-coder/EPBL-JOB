@@ -234,7 +234,7 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   <div class="splash-logo">🏭</div>
   <div class="splash-title">Job Tracker</div>
   <div class="splash-sub">Manufacturing · Production Management</div>
-  <button class="splash-btn" onclick="showScreen('scr-worker-login')">👷 I am a Worker</button>
+  <button class="splash-btn" onclick="showScreen('scr-worker-login')">🤝 I am a Partner</button>
   <button class="splash-btn-sec" onclick="showScreen('scr-admin-login')">👨‍💼 I am Admin</button>
   <button class="lang-btn" onclick="toggleLang()" id="lang-toggle"
     style="background:rgba(255,255,255,.15);padding:8px 18px;border-radius:20px;margin-top:8px">
@@ -246,7 +246,7 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 <div class="screen" id="scr-worker-login">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="tb-title">👷 Worker Login</div><div class="tb-sub">Enter your mobile & PIN</div></div>
+      <div><div class="tb-title">🤝 Partner Login</div><div class="tb-sub">Enter your mobile & PIN</div></div>
       <button class="back-btn" onclick="showScreen('scr-splash')">← Back</button>
     </div>
   </div>
@@ -343,7 +343,7 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 <div class="screen" id="scr-worker-menu">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="tb-title" id="wm-name">Worker Menu</div><div class="tb-sub" id="wm-dept"></div></div>
+      <div><div class="tb-title" id="wm-name">Partner Menu</div><div class="tb-sub" id="wm-dept"></div></div>
       <button class="back-btn" onclick="showScreen('scr-worker-home')">← Back</button>
     </div>
   </div>
@@ -676,7 +676,7 @@ function adminLogout() {
 // ── WORKER HOME ──
 async function loadWorkerHome() {
   if (!currentWorker) return;
-  document.getElementById('wh-title').textContent = '👷 '+currentWorker.name;
+  document.getElementById('wh-title').textContent = '🤝 '+currentWorker.name;
   document.getElementById('wh-sub').textContent = currentWorker.dept1 + (currentWorker.dept2?' · '+currentWorker.dept2:'');
   document.getElementById('wm-name').textContent = currentWorker.name;
   document.getElementById('wm-dept').textContent = currentWorker.dept1 + (currentWorker.dept2?' · '+currentWorker.dept2:'');

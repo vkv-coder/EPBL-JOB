@@ -462,9 +462,9 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
     <div class="admin-tabs" style="margin-top:12px">
       <div class="admin-tab active" onclick="adminTab('today')" id="tab-today">📋 Today</div>
       <div class="admin-tab" onclick="adminTab('tomorrow')" id="tab-tomorrow">🌅 Tmrw</div>
+      <div class="admin-tab" onclick="adminTab('inspect')" id="tab-inspect">🔍 Inspect</div>
       <div class="admin-tab" onclick="adminTab('board')" id="tab-board">👷 Board</div>
       <div class="admin-tab" onclick="adminTab('jobs')" id="tab-jobs">🏭 Jobs</div>
-      <div class="admin-tab" onclick="adminTab('workers')" id="tab-workers">⚙️ Mgmt</div>
       <div class="admin-tab" onclick="adminTab('create')" id="tab-create">➕ New</div>
     </div>
   </div>
@@ -866,34 +866,57 @@ async function loadProcs() {
         </div>
       </div>`;
     for (const p of d.procs) {
-      const sc = p.colour==='green'?'g':p.colour==='orange'?'o':p.colour==='red'?'r':'w';
-      const alertTxt = p.colour==='green'?(p.delayHrs>0?'⚠️ Done — delayed':'✅ Completed on time'):
-                       p.colour==='orange'?'🟠 Running now':p.colour==='red'?'🔴 OVERDUE':'⚪ Upcoming';
-      const alertCls = p.colour==='green'?'ag':p.colour==='orange'?'ao':p.colour==='red'?'ar':'aw';
+      const isPendInsp = p.status === 'Pending Inspection';
+      const isRework   = p.status === 'Rework';
+      const isDone     = p.status === 'Done';
+      const isRunning  = p.status === 'In Progress';
+      const isPending  = p.status === 'Pending' || p.status === 'Rework';
+      const isInsp     = p.isInspection;
+
+      const sc = isDone?'g':isRunning?'o':(isPendInsp?'o'):isRework?'r':'w';
+      const alertTxt = isDone?(p.delayHrs>0?'⚠️ Done — delayed':'✅ Completed on time'):
+                       isPendInsp?'🔍 Pending Inspection by Kalpesh':
+                       isRework?'🔄 Rework — Inspection rejected':
+                       isRunning?'🟠 Running now':
+                       isInsp?'🔍 Inspection step':'⚪ Upcoming';
+      const alertCls = isDone?'ag':isPendInsp?'ao':isRework?'ar':isRunning?'ao':'aw';
+      const alertBg  = isPendInsp?'#fef3c7':isRework?'#fef2f2':'';
+
+      // START: only if Pending or Rework (not started yet)
+      const canStart = (p.status==='Pending'||p.status==='Rework') && !p.actStart;
+      // STOP: only if In Progress (started but not stopped)
+      const canStop  = p.status==='In Progress' && p.actStart && !p.actEnd;
+
       const div = document.createElement('div');
       div.className = `proc-card p${sc}`;
+      if (isInsp) div.style.background = '#f8f4ff'; // light purple for inspection steps
       div.id = `proc-${p.seq}`;
       div.innerHTML = `
         <div class="pc-top">
-          <div class="pc-seq ${sc}">${p.seq}</div>
+          <div class="pc-seq ${sc}">${isInsp?'🔍':p.seq}</div>
           <div class="pc-name ${sc}">${p.name}</div>
           <div class="sdot ${sc}"></div>
         </div>
-        <div class="pc-alert ${alertCls}">${alertTxt}</div>
+        <div class="pc-alert ${alertCls}" ${alertBg?`style="background:${alertBg}"`:''}>${alertTxt}</div>
+        ${p.defaultWorker?`<div style="font-size:9px;color:var(--muted);margin-bottom:5px">
+          👷 Default: ${p.defaultWorker}</div>`:''}
         <div class="pc-dates">
-          <div class="pdb"><div class="pdl">${lang==='gu'?'નિ.શરૂ':'Plan Start'}</div>
-            <div class="pdv ${p.colour==='red'?'r2':''}">${p.planStart}</div></div>
-          <div class="pdb"><div class="pdl">${lang==='gu'?'નિ.અંત':'Plan End'}</div>
+          <div class="pdb"><div class="pdl">Plan Start</div>
+            <div class="pdv ${isRework?'r2':''}">${p.planStart}</div></div>
+          <div class="pdb"><div class="pdl">Plan End</div>
             <div class="pdv">${p.planEnd}</div></div>
-          <div class="pdb"><div class="pdl">${lang==='gu'?'વા.શરૂ':'Actual Start'}</div>
+          <div class="pdb"><div class="pdl">Actual Start</div>
             <div class="pdv act">${p.actStart||'—'}</div></div>
-          <div class="pdb"><div class="pdl">${lang==='gu'?'વા.અંત':'Actual End'}</div>
+          <div class="pdb"><div class="pdl">Actual End</div>
             <div class="pdv act">${p.actEnd||'—'}</div></div>
         </div>
+        ${isPendInsp?`<div style="background:#fef3c7;border-radius:8px;padding:8px 10px;
+          font-size:11px;font-weight:600;color:#92400e;text-align:center;margin-bottom:6px">
+          ⏳ Waiting for Kalpesh to inspect</div>`:''}
         <div class="pac">
-          <button class="bstart" ${p.status==='Pending'?'':'disabled'} onclick="stampStart(${p.seq})">
+          <button class="bstart" ${canStart?'':'disabled'} onclick="stampStart(${p.seq})">
             ${lang==='gu'?'▶ શરૂ':'▶ START'}</button>
-          <button class="bstop" ${p.status==='In Progress'?'':'disabled'} onclick="stampStop(${p.seq})">
+          <button class="bstop" ${canStop?'':'disabled'} onclick="stampStop(${p.seq})">
             ${lang==='gu'?'■ બંધ':'■ STOP'}</button>
           <button class="brem" onclick="openRemark(${p.seq},'${p.name.replace(/'/g,"\\'").substring(0,40)}')">📝</button>
         </div>`;
@@ -906,13 +929,13 @@ async function loadProcs() {
 }
 
 async function stampStart(seq) {
-  const dept = currentDept || currentWorker.dept1;
   const btn = document.querySelector(`#proc-${seq} .bstart`);
   if (btn) { btn.disabled=true; btn.textContent='⏳'; }
   try {
-    const d = await apiPost({action:'stampStart', jobNo:currentJob.jobNo, dept, seq});
+    const d = await apiPost({action:'stampStart', jobNo:currentJob.jobNo, seq,
+                             workerId:currentWorker?.workerId||''});
     if (!d.success) throw new Error(d.error);
-    showToast(lang==='gu'?'✅ શરૂ નોંધાયું — '+d.actStart:'✅ Started — '+d.actStart);
+    showToast('✅ Started — '+d.actStart);
     loadProcs();
   } catch(e) {
     showToast('⚠️ '+e.message);
@@ -921,16 +944,28 @@ async function stampStart(seq) {
 }
 
 async function stampStop(seq) {
-  const dept = currentDept || currentWorker.dept1;
   const btn = document.querySelector(`#proc-${seq} .bstop`);
   if (btn) { btn.disabled=true; btn.textContent='⏳'; }
   try {
-    const d = await apiPost({action:'stampStop', jobNo:currentJob.jobNo, dept, seq});
-    if (!d.success) throw new Error(d.error);
-    const msg = d.delayHrs > 0
-      ? (lang==='gu'?`⚠️ ${d.delayHrs} કલાક વિલંબ`:`⚠️ ${d.delayHrs} hrs delayed`)
-      : (lang==='gu'?'✅ સમયસર પૂર્ણ':'✅ Completed on time');
-    showToast(msg);
+    const d = await apiPost({action:'stampStop', jobNo:currentJob.jobNo, seq,
+                             workerId:currentWorker?.workerId||''});
+    if (!d.success) throw new Error(d.error||d.error);
+    if (d.inspectionPending) {
+      showToast('✅ Done! Inspection pending — Kalpesh notified');
+      // Show WhatsApp button for Kalpesh
+      const wa = d.whatsappInspector;
+      if (wa?.mobile) {
+        const msg = encodeURIComponent(wa.message);
+        const waUrl = `https://wa.me/91${wa.mobile}?text=${msg}`;
+        // Show toast with link info
+        showToast(`💬 Send WhatsApp to Kalpesh: ${wa.mobile}`);
+        // Store for display
+        window._lastInspWA = {url:waUrl, msg:wa.message, mobile:wa.mobile};
+      }
+    } else {
+      const msg = d.delayHrs > 0 ? `⚠️ ${d.delayHrs} hrs delayed` : '✅ Completed on time';
+      showToast(msg);
+    }
     loadProcs();
   } catch(e) {
     showToast('⚠️ '+e.message);
@@ -967,7 +1002,7 @@ async function saveRemark() {
 // ── ADMIN TABS ──
 function adminTab(tab) {
   adminCurrentTab = tab;
-  ['today','tomorrow','board','jobs','workers','create'].forEach(t => {
+  ['today','tomorrow','inspect','board','jobs','workers','create'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
   loadAdminTab(tab);
@@ -981,6 +1016,7 @@ async function loadAdminTab(tab) {
   else if (tab === 'tomorrow') await loadTomorrowBoard(body);
   else if (tab === 'jobs') await loadAdminJobs(body);
   else if (tab === 'workers') await loadWorkerMgmt(body);
+  else if (tab === 'inspect') await loadInspectBoard(body);
   else if (tab === 'board')  await loadWorkerBoard(body);
   else if (tab === 'create') renderCreateJob(body);
 }
@@ -1007,7 +1043,15 @@ async function loadTodayBoard(body) {
         <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.overdue||0}</div><div class="stat-l">Overdue</div></div>
         <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${unassigned.length}</div><div class="stat-l">Unassigned</div></div>
         <div class="stat-box"><div class="stat-n" style="color:var(--green)">${assigned.length}</div><div class="stat-l">Assigned</div></div>
-      </div>`;
+      </div>
+      ${d.pendingInspection>0?`<div style="background:#fef3c7;border-radius:10px;padding:8px 12px;
+        margin-bottom:10px;font-size:11px;font-weight:700;color:#92400e;
+        display:flex;justify-content:space-between;align-items:center">
+        <span>🔍 ${d.pendingInspection} process(es) awaiting your inspection</span>
+        <button onclick="adminTab('inspect')" style="background:#f59e0b;color:#fff;
+          padding:4px 10px;border-radius:7px;font-size:10px;font-weight:700;border:none;cursor:pointer">
+          Inspect →</button></div>`:''}`;
+
 
     // ── TO BE ASSIGNED ──
     if (unassigned.length) {
@@ -1288,6 +1332,114 @@ async function forceAssignWorker(workerId, workerName) {
 function closeAssignModal() {
   document.getElementById('assign-modal').classList.remove('open');
   assignCtx = null;
+}
+
+// ── INSPECT BOARD (Kalpesh approves/rejects) ──
+async function loadInspectBoard(body) {
+  try {
+    const d = await api({action:'getPendingInspections'});
+    if (!d.success) throw new Error(d.error);
+
+    body.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
+          🔍 Pending Inspections</div>
+        <div style="background:#fef08a;color:#000;padding:3px 10px;border-radius:8px;
+          font-size:11px;font-weight:700">${d.count} pending</div>
+      </div>`;
+
+    if (!d.pending.length) {
+      body.innerHTML += `<div class="empty"><div class="empty-icon">✅</div>
+        <div class="empty-txt">No pending inspections</div>
+        <div class="empty-sub">All processes inspected</div></div>`;
+      return;
+    }
+
+    for (const p of d.pending) {
+      const div = document.createElement('div');
+      div.style.cssText = `background:var(--card);border-left:4px solid #f59e0b;
+        border-radius:12px;padding:12px;margin-bottom:10px;
+        box-shadow:0 2px 8px rgba(13,27,62,.08)`;
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
+            ${p.jobNo} · Seq ${p.seq}</div>
+          <div style="font-size:9px;background:#fef3c7;color:#92400e;
+            padding:2px 8px;border-radius:6px;font-weight:700">🕐 Pending</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px">
+          ${p.processName.substring(0,55)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">
+          👷 ${p.workerName} · Completed: ${p.completedAt}</div>
+        <div id="insp-remark-${p.inspId}" style="margin-bottom:8px;display:none">
+          <textarea id="insp-txt-${p.inspId}" placeholder="Rejection reason / remarks (optional)..."
+            style="width:100%;background:var(--bg);border:1.5px solid var(--border);
+            border-radius:8px;padding:8px;font-size:12px;font-family:'DM Sans',sans-serif;
+            resize:none;height:70px"></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="approveInspection('${p.inspId}','${p.jobNo}',${p.seq},'${p.workerName}','${p.workerMobile||''}')"
+            style="flex:1;background:var(--green);color:#fff;padding:9px;border-radius:9px;
+            font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer">
+            ✅ Approve</button>
+          <button onclick="toggleRejectRemark('${p.inspId}')"
+            style="flex:1;background:var(--red);color:#fff;padding:9px;border-radius:9px;
+            font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer"
+            id="reject-btn-${p.inspId}">
+            ❌ Reject</button>
+        </div>
+        <div id="confirm-reject-${p.inspId}" style="display:none;margin-top:6px">
+          <button onclick="rejectInspection('${p.inspId}','${p.jobNo}',${p.seq},'${p.workerName}','${p.workerMobile||''}')"
+            style="width:100%;background:#7f1d1d;color:#fff;padding:9px;border-radius:9px;
+            font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer">
+            ❌ Confirm Reject & Send Rework to ${p.workerName}</button>
+        </div>`;
+      body.appendChild(div);
+    }
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
+
+function toggleRejectRemark(inspId) {
+  const remarkDiv = document.getElementById(`insp-remark-${inspId}`);
+  const confirmDiv = document.getElementById(`confirm-reject-${inspId}`);
+  remarkDiv.style.display = remarkDiv.style.display==='none' ? 'block' : 'none';
+  confirmDiv.style.display = confirmDiv.style.display==='none' ? 'block' : 'none';
+}
+
+async function approveInspection(inspId, jobNo, seq, workerName, workerMobile) {
+  const btn = event.target;
+  btn.disabled=true; btn.textContent='⏳ Approving...';
+  try {
+    const d = await apiPost({action:'approveInspection', inspId, jobNo, seq,
+                             adminEmail:currentAdmin?.email||''});
+    if (!d.success) throw new Error(d.error);
+    showToast('✅ Approved!');
+    if (d.nextAssigned) {
+      const n = d.nextAssigned;
+      const msg = encodeURIComponent(`✅ New Task Assigned!\nJob: ${jobNo}\nSeq ${n.seq}: ${n.processName.substring(0,40)}\nPlease open the Job Tracker app.`);
+      showToast(`💬 Send WhatsApp to ${n.workerName}: ${n.mobile}`);
+      window._nextWA = {url:`https://wa.me/91${n.mobile}?text=${msg}`, name:n.workerName, mobile:n.mobile};
+    }
+    loadAdminTab('inspect');
+  } catch(e) { showToast('⚠️ '+e.message); btn.disabled=false; btn.textContent='✅ Approve'; }
+}
+
+async function rejectInspection(inspId, jobNo, seq, workerName, workerMobile) {
+  const remarks = document.getElementById(`insp-txt-${inspId}`)?.value || '';
+  try {
+    const d = await apiPost({action:'rejectInspection', inspId, jobNo, seq,
+                             workerName, workerMobile, remarks});
+    if (!d.success) throw new Error(d.error);
+    showToast('❌ Rejected — rework sent to '+workerName);
+    if (workerMobile) {
+      const msg = encodeURIComponent(`🔄 Rework Needed!\nJob: ${jobNo} · Seq ${seq}\n${remarks?'Reason: '+remarks:''}\nPlease redo and tap STOP again.`);
+      window._reworkWA = {url:`https://wa.me/91${workerMobile}?text=${msg}`, name:workerName};
+    }
+    loadAdminTab('inspect');
+  } catch(e) { showToast('⚠️ '+e.message); }
 }
 
 // ── WORKER BOARD (admin sees worker-wise status) ──

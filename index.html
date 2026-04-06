@@ -873,7 +873,7 @@ async function loadProcs() {
       const isPending  = p.status === 'Pending' || p.status === 'Rework';
       const isInsp     = p.isInspection;
 
-      const sc = isDone?'g':isRunning?'o':(isPendInsp?'o'):isRework?'r':'w';
+      const sc = isDone?'g':isRunning?'o':isPendInsp?'o':isRework?'r':'w';
       const alertTxt = isDone?(p.delayHrs>0?'⚠️ Done — delayed':'✅ Completed on time'):
                        isPendInsp?'🔍 Pending Inspection by Kalpesh':
                        isRework?'🔄 Rework — Inspection rejected':

@@ -459,13 +459,15 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
         <button class="back-btn" onclick="adminLogout()">Logout</button>
       </div>
     </div>
-    <div class="admin-tabs" style="margin-top:12px">
-      <div class="admin-tab active" onclick="adminTab('today')" id="tab-today">📋 Today</div>
-      <div class="admin-tab" onclick="adminTab('tomorrow')" id="tab-tomorrow">🌅 Tmrw</div>
-      <div class="admin-tab" onclick="adminTab('inspect')" id="tab-inspect">🔍 Inspect</div>
-      <div class="admin-tab" onclick="adminTab('board')" id="tab-board">👷 Board</div>
-      <div class="admin-tab" onclick="adminTab('jobs')" id="tab-jobs">🏭 Jobs</div>
-      <div class="admin-tab" onclick="adminTab('create')" id="tab-create">➕ New</div>
+    <div class="admin-tabs" style="margin-top:12px;overflow-x:auto;flex-wrap:nowrap;
+      scrollbar-width:none;-ms-overflow-style:none">
+      <div class="admin-tab active" onclick="adminTab('today')" id="tab-today" style="white-space:nowrap">📋 Today</div>
+      <div class="admin-tab" onclick="adminTab('tomorrow')" id="tab-tomorrow" style="white-space:nowrap">🌅 Tmrw</div>
+      <div class="admin-tab" onclick="adminTab('inspect')" id="tab-inspect" style="white-space:nowrap">🔍 Inspect</div>
+      <div class="admin-tab" onclick="adminTab('board')" id="tab-board" style="white-space:nowrap">👷 Board</div>
+      <div class="admin-tab" onclick="adminTab('jobs')" id="tab-jobs" style="white-space:nowrap">🏭 Jobs</div>
+      <div class="admin-tab" onclick="adminTab('workers')" id="tab-workers" style="white-space:nowrap">⚙️ Mgmt</div>
+      <div class="admin-tab" onclick="adminTab('create')" id="tab-create" style="white-space:nowrap">➕ New</div>
     </div>
   </div>
   <div class="body" id="admin-body">

@@ -224,6 +224,18 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 .divider{height:1px;background:var(--border);margin:12px 0}
 .section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy);margin-bottom:10px}
 .info-box{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+/* ADMIN MENU */
+.menu-item{display:flex;align-items:center;gap:14px;padding:16px 14px;background:var(--card);
+  border-radius:14px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 10px rgba(13,27,62,.07);
+  transition:transform .15s;border-left:4px solid transparent}
+.menu-item:active{transform:scale(.98)}
+.menu-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:22px;flex-shrink:0}
+.menu-label{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--navy)}
+.menu-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.menu-arrow{margin-left:auto;color:var(--muted);font-size:18px;font-weight:300}
+.menu-badge{background:var(--red);color:#fff;border-radius:10px;padding:2px 8px;
+  font-size:10px;font-weight:700;margin-left:auto}
 .info-box strong{color:var(--navy)}
 </style>
 </head>
@@ -449,25 +461,34 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   </div>
 </div>
 
-<!-- ═══ ADMIN HOME ═══ -->
+<!-- ═══ ADMIN MENU ═══ -->
 <div class="screen" id="scr-admin-home">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="tb-title">Admin Panel</div><div class="tb-sub" id="admin-email-display"></div></div>
+      <div>
+        <div class="tb-title">⚡ Energypack</div>
+        <div class="tb-sub" id="admin-email-display"></div>
+      </div>
       <div style="display:flex;gap:6px">
         <button class="lang-btn" onclick="toggleLang()">🌐</button>
         <button class="back-btn" onclick="adminLogout()">Logout</button>
       </div>
     </div>
-    <div class="admin-tabs" style="margin-top:12px;overflow-x:auto;flex-wrap:nowrap;
-      scrollbar-width:none;-ms-overflow-style:none">
-      <div class="admin-tab active" onclick="adminTab('today')" id="tab-today" style="white-space:nowrap">📋 Today</div>
-      <div class="admin-tab" onclick="adminTab('tomorrow')" id="tab-tomorrow" style="white-space:nowrap">🌅 Tmrw</div>
-      <div class="admin-tab" onclick="adminTab('inspect')" id="tab-inspect" style="white-space:nowrap">🔍 Inspect</div>
-      <div class="admin-tab" onclick="adminTab('board')" id="tab-board" style="white-space:nowrap">👷 Board</div>
-      <div class="admin-tab" onclick="adminTab('jobs')" id="tab-jobs" style="white-space:nowrap">🏭 Jobs</div>
-      <div class="admin-tab" onclick="adminTab('workers')" id="tab-workers" style="white-space:nowrap">⚙️ Mgmt</div>
-      <div class="admin-tab" onclick="adminTab('create')" id="tab-create" style="white-space:nowrap">➕ New</div>
+  </div>
+  <div class="body">
+    <div id="admin-menu-body"></div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN CONTENT ═══ -->
+<div class="screen" id="scr-admin-content">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="tb-title" id="admin-content-title">Today</div>
+        <div class="tb-sub" id="admin-content-sub"></div></div>
+      <div style="display:flex;gap:6px">
+        <button class="back-btn" onclick="showScreen('scr-admin-home');renderAdminMenu()">☰ Menu</button>
+      </div>
     </div>
   </div>
   <div class="body" id="admin-body">
@@ -661,8 +682,8 @@ async function verifyAdminEmail(email) {
       currentAdmin = {email};
       localStorage.setItem('admin', JSON.stringify(currentAdmin));
       document.getElementById('admin-email-display').textContent = email;
-      loadAdminTab('today');
       showScreen('scr-admin-home');
+      renderAdminMenu();
       showToast('✅ Welcome Admin!');
     } else {
       const msg = document.getElementById('admin-login-msg');
@@ -1001,17 +1022,76 @@ async function saveRemark() {
   finally { btn.textContent='Save'; btn.disabled=false; }
 }
 
+
+// ── ADMIN MENU ──
+async function renderAdminMenu() {
+  const body = document.getElementById('admin-menu-body');
+  
+  // Get pending inspection count
+  let inspCount = 0;
+  try {
+    const d = await api({action:'getPendingInspections'});
+    if (d.success) inspCount = d.count;
+  } catch(e) {}
+
+  const items = [
+    {tab:'today',    icon:'📋', bg:'#dbeafe', label:'Today's Board',    sub:'Assign workers · Track overdue'},
+    {tab:'inspect',  icon:'🔍', bg:'#fef3c7', label:'Inspect',           sub:'Approve or reject completed work', badge: inspCount},
+    {tab:'tomorrow', icon:'🌅', bg:'#f0fdf4', label:'Tomorrow',          sub:'Plan ahead · Pre-assign workers'},
+    {tab:'board',    icon:'👷', bg:'#f3e8ff', label:'Worker Board',      sub:'See who is free · busy · delayed'},
+    {tab:'jobs',     icon:'🏭', bg:'#fff7ed', label:'All Jobs',          sub:'Job progress · delete jobs'},
+    {tab:'workers',  icon:'⚙️', bg:'#f1f5f9', label:'Management',        sub:'Add workers · reset PIN'},
+    {tab:'summary',  icon:'📊', bg:'#dcfce7', label:'Summary',           sub:'Planned vs actual · delays'},
+    {tab:'create',   icon:'➕', bg:'#fef2f2', label:'New Job',           sub:'Create job · generate schedule'},
+  ];
+
+  body.innerHTML = `
+    <div style="background:linear-gradient(135deg,var(--navy),var(--blue));
+      border-radius:14px;padding:14px;margin-bottom:14px;
+      display:flex;align-items:center;gap:12px">
+      <div style="font-size:36px">🏭</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#fff">
+          Admin Panel</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px" id="admin-menu-email"></div>
+      </div>
+    </div>`;
+
+  document.getElementById('admin-menu-email').textContent = currentAdmin?.email||'';
+
+  for (const item of items) {
+    const div = document.createElement('div');
+    div.className = 'menu-item';
+    div.style.borderLeftColor = item.badge > 0 ? 'var(--red)' : 'transparent';
+    div.innerHTML = `
+      <div class="menu-icon" style="background:${item.bg}">${item.icon}</div>
+      <div style="flex:1">
+        <div class="menu-label">${item.label}</div>
+        <div class="menu-sub">${item.sub}</div>
+      </div>
+      ${item.badge > 0 
+        ? `<div class="menu-badge">${item.badge}</div>` 
+        : `<div class="menu-arrow">›</div>`}`;
+    div.onclick = () => adminTab(item.tab);
+    body.appendChild(div);
+  }
+}
 // ── ADMIN TABS ──
 function adminTab(tab) {
   adminCurrentTab = tab;
-  ['today','tomorrow','inspect','board','jobs','workers','create'].forEach(t => {
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
-  });
+  const titles = {
+    today:'📋 Today', tomorrow:'🌅 Tomorrow', inspect:'🔍 Inspect',
+    board:'👷 Worker Board', jobs:'🏭 Jobs', workers:'⚙️ Management',
+    create:'➕ New Job', summary:'📊 Summary'
+  };
+  document.getElementById('admin-content-title').textContent = titles[tab]||tab;
+  showScreen('scr-admin-content');
   loadAdminTab(tab);
 }
 
 async function loadAdminTab(tab) {
   const body = document.getElementById('admin-body');
+  body.innerHTML = '';
   body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
 
   if (tab === 'today') await loadTodayBoard(body);
@@ -1021,6 +1101,7 @@ async function loadAdminTab(tab) {
   else if (tab === 'inspect') await loadInspectBoard(body);
   else if (tab === 'board')  await loadWorkerBoard(body);
   else if (tab === 'create') renderCreateJob(body);
+  else if (tab === 'summary') await loadSummary(body);
 }
 
 // ── TODAY BOARD ──
@@ -1775,6 +1856,88 @@ function showToast(msg) {
   setTimeout(() => el.classList.remove('show'), 3200);
 }
 
+
+// ── SUMMARY TAB ──
+async function loadSummary(body) {
+  try {
+    const d = await api({action:'getSummary'});
+    if (!d.success) throw new Error(d.error);
+
+    if (!d.rows.length) {
+      body.innerHTML = `<div class="empty"><div class="empty-icon">📊</div>
+        <div class="empty-txt">No jobs yet</div>
+        <div class="empty-sub">Summary will appear after jobs are created</div></div>`;
+      return;
+    }
+
+    body.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+      color:var(--navy);margin-bottom:12px">📊 Job Summary (${d.rows.length} jobs)</div>`;
+
+    for (const j of d.rows) {
+      const isDone = j.status.includes('Completed');
+      const isDelayed = j.status.includes('Delayed');
+      const bdrColor = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
+      const statusBg = isDone?(isDelayed?'#fef2f2':'#f0fdf4'):'#fff7ed';
+      const statusFg = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
+
+      const div = document.createElement('div');
+      div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};
+        border-radius:12px;padding:12px;margin-bottom:10px;
+        box-shadow:0 2px 8px rgba(13,27,62,.07)`;
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
+              ${j.jobNo}</div>
+            <div style="font-size:10px;color:var(--muted)">${j.customer} · ${j.productType}</div>
+          </div>
+          <div style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;
+            background:${statusBg};color:${statusFg}">${j.status}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase">Planned</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text);margin-top:2px">
+              ${j.plannedStart} →<br>${j.plannedEnd}</div>
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase">Actual</div>
+            <div style="font-size:10px;font-weight:600;
+              color:${isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)'};margin-top:2px">
+              ${j.actualStart||'—'} →<br>${j.actualEnd||'In Progress...'}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
+              ${j.standardHrs||0}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:600">Std Hrs</div>
+          </div>
+          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
+              color:${j.actualHrs>j.standardHrs?'var(--red)':'var(--green)'}">
+              ${j.actualHrs||'—'}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:600">Act Hrs</div>
+          </div>
+          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
+              ${j.calendarDays||'—'}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:600">Cal Days</div>
+          </div>
+          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
+              color:${j.delayHrs>0?'var(--red)':'var(--green)'}">
+              ${j.delayHrs>0?'+'+j.delayHrs+'h':'✓'}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:600">Delay</div>
+          </div>
+        </div>`;
+      body.appendChild(div);
+    }
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
 // ── AUTO LOGIN ──
 window.onload = function() {
   // Auto-restore session
@@ -1783,8 +1946,8 @@ window.onload = function() {
     showScreen('scr-worker-home');
   } else if (currentAdmin) {
     document.getElementById('admin-email-display').textContent = currentAdmin.email;
-    loadAdminTab('today');
     showScreen('scr-admin-home');
+    renderAdminMenu();
   }
 };
 </script>

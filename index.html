@@ -1960,46 +1960,58 @@ async function loadSummary(body) {
 
 // ── SEARCH ──
 let searchCtx = null;
+let selectedStatus = 'All';
 
 async function loadSearch(body) {
-  body.innerHTML = `
-    <div style="margin-bottom:12px">
-      <div class="field-label">Job Number</div>
-      <input class="field-input" id="srch-jobno" placeholder="e.g. B-001 or leave blank for all"
-        style="margin-bottom:10px">
-      <div class="field-label">Filter by Status</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
-        ${['All','Overdue','Not Started','In Progress','Pending Inspection','Completed']
-          .map(s=>`<div onclick="selectStatus('${s}')" id="ss-${s.replace(/ /g,'-')}"
-            style="background:var(--bg);border:2px solid var(--border);border-radius:10px;
-            padding:9px;text-align:center;font-family:'Syne',sans-serif;font-size:11px;
-            font-weight:700;color:var(--muted);cursor:pointer">${s}</div>`).join('')}
+  body.innerHTML = '<div class="loading"><div class="spinner"></div> Loading jobs...</div>';
+  try {
+    // Load all job numbers from adminJobs
+    const d = await api({action:'adminJobs'});
+    if (!d.success) throw new Error(d.error);
+
+    body.innerHTML = `
+      <div style="margin-bottom:12px">
+        <div class="field-label">Select Job</div>
+        <select class="field-input" id="srch-jobno" onchange="doSearch()"
+          style="margin-bottom:10px">
+          <option value="">-- Select Job Number --</option>
+          ${d.jobs.map(j=>`<option value="${j.jobNo}">${j.jobNo} · ${j.type} · ${j.cust||''}</option>`).join('')}
+        </select>
+        <div class="field-label">Filter by Status</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+          ${['All','Delayed','Not Started','In Progress','Pending Inspection','Completed']
+            .map(s=>`<div onclick="selectStatus('${s}')" id="ss-${s.replace(/ /g,'-')}"
+              style="background:var(--bg);border:2px solid var(--border);border-radius:20px;
+              padding:6px 12px;font-family:'Syne',sans-serif;font-size:10px;
+              font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap">${s}</div>`).join('')}
+        </div>
       </div>
-      <button onclick="doSearch()"
-        style="background:var(--navy);color:#fff;width:100%;padding:12px;border-radius:12px;
-        font-family:'Syne',sans-serif;font-size:14px;font-weight:800;border:none;cursor:pointer">
-        🔎 Search</button>
-    </div>
-    <div id="srch-results"></div>`;
-  
-  // Pre-select All
-  selectStatus('All');
+      <div id="srch-results"></div>`;
+
+    selectStatus('All');
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
 }
 
-let selectedStatus = 'All';
 function selectStatus(s) {
   selectedStatus = s;
-  ['All','Overdue','Not Started','In Progress','Pending Inspection','Completed'].forEach(st => {
+  ['All','Delayed','Not Started','In Progress','Pending Inspection','Completed'].forEach(st => {
     const el = document.getElementById('ss-'+st.replace(/ /g,'-'));
     if (!el) return;
     el.style.background = st===s ? 'var(--navy)' : 'var(--bg)';
     el.style.color = st===s ? '#fff' : 'var(--muted)';
     el.style.borderColor = st===s ? 'var(--navy)' : 'var(--border)';
   });
+  // Auto search when status changes if job selected
+  const jobNo = document.getElementById('srch-jobno')?.value;
+  if (jobNo) doSearch();
 }
 
 async function doSearch() {
   const jobNo = document.getElementById('srch-jobno')?.value.trim() || '';
+  if (!jobNo) return; // Don't search without job selected
   const resultsDiv = document.getElementById('srch-results');
   resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
   

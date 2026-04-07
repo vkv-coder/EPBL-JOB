@@ -557,6 +557,22 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   </div>
 </div>
 
+<!-- ═══ ADMIN STOP MODAL ═══ -->
+<div class="modal-overlay" id="admin-stop-modal">
+  <div class="modal">
+    <div class="modal-title" id="asm-title">⏹ Admin Stop</div>
+    <div class="info-box" id="asm-info"></div>
+    <div class="field-label">Actual End Date & Time</div>
+    <input class="field-input" id="asm-datetime" type="datetime-local">
+    <div class="field-label">Reason (optional)</div>
+    <input class="field-input" id="asm-remark" placeholder="e.g. Worker on leave">
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeAdminStop()">Cancel</button>
+      <button class="modal-save" onclick="doAdminStop()" id="asm-save">⏹ Stop Process</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -907,9 +923,9 @@ async function loadProcs() {
       </div>`;
     if (!d.procs || d.procs.length === 0) {
       body.innerHTML += `<div class="empty">
-        <div class="empty-icon">⚠️</div>
-        <div class="empty-txt">No processes found</div>
-        <div class="empty-sub">WorkerID: ${currentWorker?.workerId} · JobNo: ${currentJob?.jobNo}</div>
+        <div class="empty-icon">📋</div>
+        <div class="empty-txt">No processes assigned yet</div>
+        <div class="empty-sub">Contact admin to assign a process</div>
       </div>`;
       return;
     }
@@ -962,7 +978,6 @@ async function loadProcs() {
           font-size:11px;font-weight:600;color:#92400e;text-align:center;margin-bottom:6px">
           ⏳ Waiting for Kalpesh to inspect</div>`:''}
         <div class="pac">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Status: "${p.status}" | canStart:${canStart} | canStop:${canStop}</div>
           <button class="bstart" ${canStart?'':'disabled'} onclick="stampStart(${p.seq})">
             ${lang==='gu'?'▶ શરૂ':'▶ START'}</button>
           <button class="bstop" ${canStop?'':'disabled'} onclick="stampStop(${p.seq})">
@@ -1228,7 +1243,12 @@ function compactCard(container, p, needsAssign) {
       border:${needsAssign?'none':'1.5px solid var(--border)'};
       padding:6px 10px;border-radius:8px;font-family:'Syne',sans-serif;
       font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
-      ${needsAssign?'👷 Assign':'↩ Change'}</button>`;
+      ${needsAssign?'👷 Assign':'↩ Change'}</button>
+    ${p.isActive?`<button onclick="openAdminStop('${p.jobNo}',${p.seq},'${p.processName.replace(/'/g,"\\'").substring(0,35)}','${workers||''}')"
+      style="background:#fef2f2;color:var(--red);border:1.5px solid #fecaca;
+      padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;
+      font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:4px">
+      ⏹</button>`:''}`;
   container.appendChild(div);
 }
 
@@ -1965,6 +1985,48 @@ async function loadSummary(body) {
     body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
       <div class="empty-txt">${e.message}</div></div>`;
   }
+}
+
+
+// ── ADMIN STOP ──
+let adminStopCtx = null;
+
+function openAdminStop(jobNo, seq, procName, workerName) {
+  adminStopCtx = {jobNo, seq};
+  document.getElementById('asm-title').textContent = '⏹ Admin Stop — S'+seq;
+  document.getElementById('asm-info').innerHTML =
+    `<strong>${procName}</strong><br>Worker: ${workerName||'—'}`;
+  // Default to yesterday 17:30
+  const d = new Date(); d.setDate(d.getDate()-1); d.setHours(17,30,0,0);
+  const local = new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('asm-datetime').value = local;
+  document.getElementById('asm-remark').value = 'Worker absent';
+  document.getElementById('admin-stop-modal').classList.add('open');
+}
+
+function closeAdminStop() {
+  document.getElementById('admin-stop-modal').classList.remove('open');
+  adminStopCtx = null;
+}
+
+async function doAdminStop() {
+  const actEndTime = document.getElementById('asm-datetime').value;
+  const remark = document.getElementById('asm-remark').value.trim();
+  if (!actEndTime) { showToast('⚠️ Enter end date and time'); return; }
+  const btn = document.getElementById('asm-save');
+  btn.disabled=true; btn.textContent='⏳ Processing...';
+  try {
+    const d = await apiPost({action:'adminStop',
+      jobNo:adminStopCtx.jobNo, seq:adminStopCtx.seq,
+      actEndTime: new Date(actEndTime).toISOString(),
+      adminEmail:currentAdmin?.email||'',
+      remark});
+    if (!d.success) throw new Error(d.error);
+    showToast('✅ Process stopped. Inspection pending.');
+    closeAdminStop();
+    loadAdminTab('today');
+  } catch(e) { showToast('⚠️ '+e.message); }
+  finally { btn.disabled=false; btn.textContent='⏹ Stop Process'; }
 }
 
 // ── SEARCH ──

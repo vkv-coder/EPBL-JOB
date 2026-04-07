@@ -540,6 +540,23 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   </div>
 </div>
 
+<!-- ═══ ADMIN NOTE MODAL ═══ -->
+<div class="modal-overlay" id="admin-note-modal">
+  <div class="modal">
+    <div class="modal-title" id="anm-title">Add Note</div>
+    <div id="anm-existing" style="display:none;background:var(--bg);border-radius:8px;
+      padding:8px 10px;margin-bottom:10px;font-size:11px;color:var(--muted)"></div>
+    <textarea id="anm-text" placeholder="Add note or reason for delay..."
+      style="width:100%;background:var(--bg);border:1.5px solid var(--border);
+      border-radius:10px;padding:11px;font-size:13px;font-family:'DM Sans',sans-serif;
+      resize:none;height:100px"></textarea>
+    <div class="modal-btns" style="margin-top:10px">
+      <button class="modal-cancel" onclick="closeAdminNote()">Cancel</button>
+      <button class="modal-save" onclick="saveAdminNote()" id="anm-save">Save Note</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1043,6 +1060,7 @@ async function renderAdminMenu() {
     {tab:'workers',  icon:'⚙️', bg:'#f1f5f9', label:'Management',        sub:'Add workers · reset PIN'},
     {tab:'summary',  icon:'📊', bg:'#dcfce7', label:'Summary',           sub:'Planned vs actual · delays'},
     {tab:'create',   icon:'➕', bg:'#fef2f2', label:'New Job',           sub:'Create job · generate schedule'},
+    {tab:'search',   icon:'🔎', bg:'#e0f2fe', label:'Search',             sub:'Search by Job No · filter by status'},
   ];
 
   body.innerHTML = `
@@ -1102,6 +1120,7 @@ async function loadAdminTab(tab) {
   else if (tab === 'board')  await loadWorkerBoard(body);
   else if (tab === 'create') renderCreateJob(body);
   else if (tab === 'summary') await loadSummary(body);
+  else if (tab === 'search')  await loadSearch(body);
 }
 
 // ── TODAY BOARD ──
@@ -1938,6 +1957,149 @@ async function loadSummary(body) {
       <div class="empty-txt">${e.message}</div></div>`;
   }
 }
+
+// ── SEARCH ──
+let searchCtx = null;
+
+async function loadSearch(body) {
+  body.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div class="field-label">Job Number</div>
+      <input class="field-input" id="srch-jobno" placeholder="e.g. B-001 or leave blank for all"
+        style="margin-bottom:10px">
+      <div class="field-label">Filter by Status</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+        ${['All','Overdue','Not Started','In Progress','Pending Inspection','Completed']
+          .map(s=>`<div onclick="selectStatus('${s}')" id="ss-${s.replace(/ /g,'-')}"
+            style="background:var(--bg);border:2px solid var(--border);border-radius:10px;
+            padding:9px;text-align:center;font-family:'Syne',sans-serif;font-size:11px;
+            font-weight:700;color:var(--muted);cursor:pointer">${s}</div>`).join('')}
+      </div>
+      <button onclick="doSearch()"
+        style="background:var(--navy);color:#fff;width:100%;padding:12px;border-radius:12px;
+        font-family:'Syne',sans-serif;font-size:14px;font-weight:800;border:none;cursor:pointer">
+        🔎 Search</button>
+    </div>
+    <div id="srch-results"></div>`;
+  
+  // Pre-select All
+  selectStatus('All');
+}
+
+let selectedStatus = 'All';
+function selectStatus(s) {
+  selectedStatus = s;
+  ['All','Overdue','Not Started','In Progress','Pending Inspection','Completed'].forEach(st => {
+    const el = document.getElementById('ss-'+st.replace(/ /g,'-'));
+    if (!el) return;
+    el.style.background = st===s ? 'var(--navy)' : 'var(--bg)';
+    el.style.color = st===s ? '#fff' : 'var(--muted)';
+    el.style.borderColor = st===s ? 'var(--navy)' : 'var(--border)';
+  });
+}
+
+async function doSearch() {
+  const jobNo = document.getElementById('srch-jobno')?.value.trim() || '';
+  const resultsDiv = document.getElementById('srch-results');
+  resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
+  
+  try {
+    const d = await api({action:'searchJobs', jobNo, status:selectedStatus});
+    if (!d.success) throw new Error(d.error);
+    
+    if (!d.results.length) {
+      resultsDiv.innerHTML = '<div class="empty"><div class="empty-icon">🔎</div><div class="empty-txt">No results found</div></div>';
+      return;
+    }
+
+    resultsDiv.innerHTML = `<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;
+      color:var(--muted);margin-bottom:8px">${d.count} result(s)</div>`;
+
+    for (const r of d.results) {
+      const isDelayed = r.delayHrs > 0 || r.displayStatus==='Overdue';
+      const isDone = r.status === 'Done';
+      const isActive = r.status === 'In Progress';
+      const isPendInsp = r.status === 'Pending Inspection';
+
+      const bdrColor = isDelayed?'var(--red)':isDone?'var(--green)':
+                       isActive?'var(--orange)':isPendInsp?'#f59e0b':'var(--grey)';
+      const badgeBg  = isDelayed?'#fef2f2':isDone?'#f0fdf4':
+                       isActive?'#fff7ed':isPendInsp?'#fef3c7':'#f1f5f9';
+      const badgeFg  = isDelayed?'var(--red)':isDone?'var(--green)':
+                       isActive?'var(--orange)':isPendInsp?'#92400e':'var(--grey)';
+
+      const div = document.createElement('div');
+      div.style.cssText = `background:var(--card);border-left:3px solid ${bdrColor};
+        border-radius:12px;padding:11px 13px;margin-bottom:8px;
+        box-shadow:0 2px 8px rgba(13,27,62,.06)`;
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
+            ${r.jobNo} · S${r.seq}</div>
+          <div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px;
+            background:${badgeBg};color:${badgeFg}">${r.displayStatus}</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px">
+          ${r.processName.substring(0,50)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+          👷 ${r.assignedWorker||r.defaultWorker||'—'} · ${r.planStart}
+          ${r.delayHrs>0?`<span style="color:var(--red);font-weight:700"> · +${r.delayHrs}h late</span>`:''}
+        </div>
+        ${r.notes?`<div style="background:#f8f9ff;border-radius:7px;padding:5px 9px;
+          font-size:10px;color:var(--text);border-left:2px solid var(--blue2);margin-bottom:6px">
+          📝 ${r.notes}</div>`:''}
+        <button onclick="openAdminNote('${r.jobNo}',${r.seq},'${r.processName.replace(/'/g,"\'").substring(0,40)}','${(r.notes||'').replace(/'/g,"\'").substring(0,100)}')"
+          style="background:var(--bg);border:1.5px solid var(--border);color:var(--navy);
+          padding:5px 12px;border-radius:8px;font-family:'Syne',sans-serif;
+          font-size:10px;font-weight:700;cursor:pointer">
+          📝 ${r.notes?'Edit Note':'Add Note'}</button>`;
+      resultsDiv.appendChild(div);
+    }
+  } catch(e) {
+    resultsDiv.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
+
+// ── ADMIN NOTE ──
+let adminNoteCtx = null;
+
+function openAdminNote(jobNo, seq, procName, existingNote) {
+  adminNoteCtx = {jobNo, seq};
+  document.getElementById('anm-title').textContent = procName.substring(0,40);
+  document.getElementById('anm-text').value = '';
+  const existDiv = document.getElementById('anm-existing');
+  if (existingNote) {
+    existDiv.style.display = 'block';
+    existDiv.innerHTML = '<strong>Existing note:</strong> ' + existingNote;
+  } else {
+    existDiv.style.display = 'none';
+  }
+  document.getElementById('admin-note-modal').classList.add('open');
+}
+
+function closeAdminNote() {
+  document.getElementById('admin-note-modal').classList.remove('open');
+  adminNoteCtx = null;
+}
+
+async function saveAdminNote() {
+  const note = document.getElementById('anm-text').value.trim();
+  if (!note) { showToast('⚠️ Enter a note'); return; }
+  const btn = document.getElementById('anm-save');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const d = await apiPost({action:'saveAdminNote',
+      jobNo:adminNoteCtx.jobNo, seq:adminNoteCtx.seq,
+      note, adminEmail:currentAdmin?.email||''});
+    if (!d.success) throw new Error(d.error);
+    showToast('✅ Note saved');
+    closeAdminNote();
+    doSearch(); // refresh results
+  } catch(e) { showToast('⚠️ '+e.message); }
+  finally { btn.disabled=false; btn.textContent='Save Note'; }
+}
+
 // ── AUTO LOGIN ──
 window.onload = function() {
   // Auto-restore session

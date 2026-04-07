@@ -905,6 +905,14 @@ async function loadProcs() {
           <div class="js-dates">${currentJob.firstProcDate||''} → ${currentJob.lastProcDate||''}</div>
         </div>
       </div>`;
+    if (!d.procs || d.procs.length === 0) {
+      body.innerHTML += `<div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-txt">No processes found</div>
+        <div class="empty-sub">WorkerID: ${currentWorker?.workerId} · JobNo: ${currentJob?.jobNo}</div>
+      </div>`;
+      return;
+    }
     for (const p of d.procs) {
       const isPendInsp = p.status === 'Pending Inspection';
       const isRework   = p.status === 'Rework';

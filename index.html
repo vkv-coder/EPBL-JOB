@@ -922,10 +922,10 @@ async function loadProcs() {
       const alertCls = isDone?'ag':isPendInsp?'ao':isRework?'ar':isRunning?'ao':'aw';
       const alertBg  = isPendInsp?'#fef3c7':isRework?'#fef2f2':'';
 
-      // START: only if Pending or Rework (not started yet)
-      const canStart = (p.status==='Pending'||p.status==='Rework') && !p.actStart;
-      // STOP: only if In Progress (started but not stopped)
-      const canStop  = p.status==='In Progress' && p.actStart && !p.actEnd;
+      // START: only if Pending or Rework and not yet started
+      const canStart = (p.status==='Pending'||p.status==='Rework');
+      // STOP: only if In Progress and already started
+      const canStop  = p.status==='In Progress';
 
       const div = document.createElement('div');
       div.className = `proc-card p${sc}`;

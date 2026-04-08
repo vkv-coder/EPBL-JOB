@@ -1913,8 +1913,7 @@ async function loadSummary(body) {
 
     if (!d.rows.length) {
       body.innerHTML = `<div class="empty"><div class="empty-icon">📊</div>
-        <div class="empty-txt">No jobs yet</div>
-        <div class="empty-sub">Summary will appear after jobs are created</div></div>`;
+        <div class="empty-txt">No jobs yet</div></div>`;
       return;
     }
 
@@ -1922,63 +1921,85 @@ async function loadSummary(body) {
       color:var(--navy);margin-bottom:12px">📊 Job Summary (${d.rows.length} jobs)</div>`;
 
     for (const j of d.rows) {
-      const isDone = j.status.includes('Completed');
-      const isDelayed = j.status.includes('Delayed');
-      const bdrColor = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
-      const statusBg = isDone?(isDelayed?'#fef2f2':'#f0fdf4'):'#fff7ed';
-      const statusFg = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
+      const isDone    = j.status.includes('Completed');
+      const isDelayed = j.delayStatus==='Delayed' || j.status.includes('Delayed');
+      const bdrColor  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
+      const statusBg  = isDone?(isDelayed?'#fef2f2':'#f0fdf4'):'#fff7ed';
+      const statusFg  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
+
+      // Delay display
+      const delayColor = isDelayed?'var(--red)':'var(--green)';
+      const delayTxt   = j.delayText||'✓ On Time';
+
+      // Seq progress
+      const seqTxt = j.currentSeq && j.totalWorkProcs
+        ? `Seq ${j.currentSeq} of ${j.totalWorkProcs}`
+        : '';
 
       const div = document.createElement('div');
       div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};
-        border-radius:12px;padding:12px;margin-bottom:10px;
-        box-shadow:0 2px 8px rgba(13,27,62,.07)`;
+        border-radius:14px;padding:13px;margin-bottom:10px;
+        box-shadow:0 2px 10px rgba(13,27,62,.08)`;
       div.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div>
-            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
-              ${j.jobNo}</div>
-            <div style="font-size:10px;color:var(--muted)">${j.customer} · ${j.productType}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+          <div style="flex:1">
+            <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;
+              color:var(--navy);letter-spacing:-0.5px">${j.jobNo}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-top:1px">
+              ${j.customer}</div>
+            <div style="font-size:10px;color:var(--muted)">${j.productType}</div>
           </div>
-          <div style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;
-            background:${statusBg};color:${statusFg}">${j.status}</div>
+          <div style="text-align:right">
+            <div style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;
+              background:${statusBg};color:${statusFg};margin-bottom:4px">${j.status}</div>
+            ${seqTxt?`<div style="font-size:10px;font-weight:700;color:var(--navy);
+              background:var(--bg);padding:2px 8px;border-radius:7px">${seqTxt}</div>`:''}
+          </div>
         </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
           <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
-            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase">Planned</div>
-            <div style="font-size:10px;font-weight:600;color:var(--text);margin-top:2px">
-              ${j.plannedStart} →<br>${j.plannedEnd}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:2px">Planned</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text)">
+              ${j.plannedStart} → ${j.plannedEnd}</div>
           </div>
           <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
-            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase">Actual</div>
-            <div style="font-size:10px;font-weight:600;
-              color:${isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)'};margin-top:2px">
-              ${j.actualStart||'—'} →<br>${j.actualEnd||'In Progress...'}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:2px">Actual</div>
+            <div style="font-size:11px;font-weight:600;color:${isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)'}">
+              ${j.actualStart?j.actualStart+' → '+(j.actualEnd||'Running...'):'Not started yet'}</div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
-            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
-              ${j.standardHrs||0}</div>
-            <div style="font-size:8px;color:var(--muted);font-weight:600">Std Hrs</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;
+          background:var(--bg);border-radius:8px;padding:7px 10px">
+          <div style="display:flex;gap:16px">
+            <div style="text-align:center">
+              <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--navy)">
+                ${j.standardHrs||0}</div>
+              <div style="font-size:8px;color:var(--muted);font-weight:600">Std Hrs</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+                color:${j.actualHrs>j.standardHrs?'var(--red)':'var(--green)'}">
+                ${j.actualHrs||'—'}</div>
+              <div style="font-size:8px;color:var(--muted);font-weight:600">Act Hrs</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--navy)">
+                ${j.calendarDays||'—'}</div>
+              <div style="font-size:8px;color:var(--muted);font-weight:600">Cal Days</div>
+            </div>
           </div>
-          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
-            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
-              color:${j.actualHrs>j.standardHrs?'var(--red)':'var(--green)'}">
-              ${j.actualHrs||'—'}</div>
-            <div style="font-size:8px;color:var(--muted);font-weight:600">Act Hrs</div>
-          </div>
-          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
-            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy)">
-              ${j.calendarDays||'—'}</div>
-            <div style="font-size:8px;color:var(--muted);font-weight:600">Cal Days</div>
-          </div>
-          <div style="background:var(--bg);border-radius:7px;padding:5px;text-align:center">
-            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
-              color:${j.delayHrs>0?'var(--red)':'var(--green)'}">
-              ${j.delayHrs>0?'+'+j.delayHrs+'h':'✓'}</div>
-            <div style="font-size:8px;color:var(--muted);font-weight:600">Delay</div>
-          </div>
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+            color:${delayColor};text-align:right">${delayTxt}</div>
         </div>`;
+      body.appendChild(div);
+    }
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
       body.appendChild(div);
     }
   } catch(e) {

@@ -1085,6 +1085,7 @@ async function renderAdminMenu() {
     {tab:'summary',  icon:'📊', bg:'#dcfce7', label:'Summary',           sub:'Planned vs actual · delays'},
     {tab:'create',   icon:'➕', bg:'#fef2f2', label:'New Job',           sub:'Create job · generate schedule'},
     {tab:'search',   icon:'🔎', bg:'#e0f2fe', label:'Search',             sub:'Search by Job No · filter by status'},
+    {tab:'manual',   icon:'🎯', bg:'#fdf4ff', label:'Manual Assign',       sub:'Assign any seq out of order'},
   ];
 
   body.innerHTML = `
@@ -1124,7 +1125,7 @@ function adminTab(tab) {
   const titles = {
     today:'📋 Today', tomorrow:'🌅 Tomorrow', inspect:'🔍 Inspect',
     board:'👷 Worker Board', jobs:'🏭 Jobs', workers:'⚙️ Management',
-    create:'➕ New Job', summary:'📊 Summary'
+    create:'➕ New Job', summary:'📊 Summary', manual:'🎯 Manual Assign'
   };
   document.getElementById('admin-content-title').textContent = titles[tab]||tab;
   showScreen('scr-admin-content');
@@ -1145,6 +1146,7 @@ async function loadAdminTab(tab) {
   else if (tab === 'create') renderCreateJob(body);
   else if (tab === 'summary') await loadSummary(body);
   else if (tab === 'search')  await loadSearch(body);
+  else if (tab === 'manual')  await loadManualAssign(body);
 }
 
 // ── TODAY BOARD ──
@@ -2195,6 +2197,132 @@ async function saveAdminNote() {
     doSearch(); // refresh results
   } catch(e) { showToast('⚠️ '+e.message); }
   finally { btn.disabled=false; btn.textContent='Save Note'; }
+}
+
+// ── MANUAL ASSIGN ──
+let manualAssignCtx = null;
+
+async function loadManualAssign(body) {
+  body.innerHTML = '<div class="loading"><div class="spinner"></div> Loading jobs...</div>';
+  try {
+    const d = await api({action:'adminJobs'});
+    if (!d.success) throw new Error(d.error);
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="section-title">🎯 Manual Assign — Out of Order</div>
+        <div style="background:#fdf4ff;border:1.5px solid #e9d5ff;border-radius:10px;
+          padding:9px 12px;margin-bottom:14px;font-size:11px;color:#7c3aed;line-height:1.6">
+          Assign any sequence to a worker even if earlier sequences are not yet done.
+          Multiple sequences can be active simultaneously.
+          <strong>Summary delay is not affected by manual assignments.</strong>
+        </div>
+        <div class="field-label">Select Job</div>
+        <select class="field-input" id="ma-jobno" onchange="loadManualSeqs()" style="margin-bottom:10px">
+          <option value="">-- Select Job --</option>
+          ${d.jobs.map(j=>`<option value="${j.jobNo}">${j.jobNo} · ${j.type} · ${j.cust||''}</option>`).join('')}
+        </select>
+      </div>
+      <div id="ma-seqs"></div>`;
+  } catch(e) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
+
+async function loadManualSeqs() {
+  const jobNo = document.getElementById('ma-jobno')?.value;
+  const seqDiv = document.getElementById('ma-seqs');
+  if (!jobNo) { seqDiv.innerHTML = ''; return; }
+  seqDiv.innerHTML = '<div class="loading"><div class="spinner"></div> Loading sequences...</div>';
+  try {
+    const d = await api({action:'getJobSchedule', jobNo});
+    if (!d.success) throw new Error(d.error);
+
+    const notStarted = d.procs.filter(p => p.status === 'Pending' && !p.isInspection);
+    const active     = d.procs.filter(p => p.status === 'In Progress' || p.status === 'Pending Inspection');
+    const done       = d.procs.filter(p => p.status === 'Done');
+
+    if (!notStarted.length) {
+      seqDiv.innerHTML = `<div class="card" style="text-align:center;color:var(--muted);font-size:13px">
+        No pending sequences available for manual assignment.</div>`;
+      return;
+    }
+
+    seqDiv.innerHTML = `
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
+          color:var(--navy);margin-bottom:8px">
+          📊 Job ${jobNo} — ${done.length} done · ${active.length} active · ${notStarted.length} pending
+        </div>
+        ${active.length ? `<div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:10px">
+          🟠 Active: ${active.map(p=>'S'+p.seq).join(', ')}</div>` : ''}
+        <div class="field-label">Select Sequence to Assign</div>
+        <select class="field-input" id="ma-seq" style="margin-bottom:10px">
+          <option value="">-- Select Sequence --</option>
+          ${notStarted.map(p=>`<option value="${p.seq}">S${p.seq} · ${p.processName.substring(0,50)}</option>`).join('')}
+        </select>
+        <div class="field-label">Select Worker</div>
+        <select class="field-input" id="ma-worker" style="margin-bottom:14px">
+          <option value="">-- Select Worker --</option>
+        </select>
+        <button onclick="doManualAssign()"
+          style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;
+          width:100%;padding:13px;border-radius:13px;font-family:'Syne',sans-serif;
+          font-size:14px;font-weight:800;border:none;cursor:pointer;
+          box-shadow:0 4px 14px rgba(124,58,237,.3)" id="ma-btn">
+          🎯 Assign Now</button>
+      </div>`;
+
+    // Load workers
+    await loadWorkersForManual();
+  } catch(e) {
+    seqDiv.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <div class="empty-txt">${e.message}</div></div>`;
+  }
+}
+
+async function loadWorkersForManual() {
+  try {
+    const d = await api({action:'getAllWorkers'});
+    const sel = document.getElementById('ma-worker');
+    if (!sel || !d.success) return;
+    sel.innerHTML = '<option value="">-- Select Worker --</option>';
+    for (const w of d.workers) {
+      if (w.status === 'Active') {
+        sel.innerHTML += `<option value="${w.workerId}|${w.name}|${w.mobile}">${w.name} · ${w.dept1}</option>`;
+      }
+    }
+  } catch(e) {}
+}
+
+async function doManualAssign() {
+  const jobNo = document.getElementById('ma-jobno')?.value;
+  const seq   = document.getElementById('ma-seq')?.value;
+  const workerVal = document.getElementById('ma-worker')?.value;
+  if (!jobNo || !seq || !workerVal) { showToast('⚠️ Select job, sequence and worker'); return; }
+  const [workerId, workerName, workerMobile] = workerVal.split('|');
+  const btn = document.getElementById('ma-btn');
+  btn.disabled = true; btn.textContent = '⏳ Assigning...';
+  try {
+    const d = await apiPost({action:'manualAssign',
+      jobNo, seq: parseInt(seq), workerId, workerName,
+      adminEmail: currentAdmin?.email || ''});
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ S${seq} assigned to ${workerName}`);
+    // Show WhatsApp link
+    if (workerMobile) {
+      const msg = encodeURIComponent(
+        `🎯 New Assignment — Job ${jobNo} · Seq ${seq}\n${d.processName||''}\nPlease start when ready.`);
+      const wa = `https://wa.me/91${workerMobile}?text=${msg}`;
+      setTimeout(() => {
+        if (confirm(`Open WhatsApp to notify ${workerName}?`)) window.open(wa, '_blank');
+      }, 500);
+    }
+    // Refresh seq list
+    await loadManualSeqs();
+  } catch(e) { showToast('⚠️ '+e.message); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='🎯 Assign Now'; } }
 }
 
 // ── AUTO LOGIN ──

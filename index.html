@@ -1162,13 +1162,13 @@ async function loadTodayBoard(body) {
       return;
     }
 
-    // Split into unassigned vs assigned
-    const unassigned = d.board.filter(p => !p.assignedWorkers?.length);
-    const assigned   = d.board.filter(p =>  p.assignedWorkers?.length);
+    // Split into unassigned vs assigned — hide INSPECTION rows (handled via Inspect tab)
+    const unassigned = d.board.filter(p => !p.assignedWorkers?.length && !p.isInspection);
+    const assigned   = d.board.filter(p =>  p.assignedWorkers?.length && !p.isInspection);
 
     body.innerHTML = `
       <div class="stat-row">
-        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.overdue||0}</div><div class="stat-l">Overdue</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.board.filter(x=>x.isOverdue&&!x.isInspection).length}</div><div class="stat-l">Overdue</div></div>
         <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${unassigned.length}</div><div class="stat-l">Unassigned</div></div>
         <div class="stat-box"><div class="stat-n" style="color:var(--green)">${assigned.length}</div><div class="stat-l">Assigned</div></div>
       </div>

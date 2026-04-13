@@ -1215,10 +1215,11 @@ function compactCard(container, p, needsAssign) {
   const isOverdue = p.isOverdue;
   const isActive  = p.isActive;
   const workers   = p.assignedWorkers?.map(w=>w.workerName).join(', ') || '';
-  const bdrColor  = isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const badgeBg   = isOverdue?'#fef2f2':isActive?'#f0fdf4':'#fff7ed';
-  const badgeFg   = isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const badgeTxt  = isOverdue?'🔴 Late':isActive?'🟢 Active':'🟠 Today';
+  const bdrColor  = isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
+  const badgeBg   = isRework?'#f5f3ff':isOverdue?'#fef2f2':isActive?'#f0fdf4':'#fff7ed';
+  const badgeFg   = isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
+  const isRework  = p.status==='Rework';
+  const badgeTxt  = isRework?'🔄 Rework':isOverdue?'🔴 Late':isActive?'🟢 Active':'🟠 Today';
 
   const div = document.createElement('div');
   div.style.cssText = `background:var(--card);border-left:3px solid ${bdrColor};
@@ -2066,7 +2067,7 @@ async function loadSearch(body) {
         </select>
         <div class="field-label">Filter by Status</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
-          ${['All','Delayed','Not Started','In Progress','Pending Inspection','Completed']
+          ${['All','Delayed','Not Started','In Progress','Pending Inspection','Rework','Completed']
             .map(s=>`<div onclick="selectStatus('${s}')" id="ss-${s.replace(/ /g,'-')}"
               style="background:var(--bg);border:2px solid var(--border);border-radius:20px;
               padding:6px 12px;font-family:'Syne',sans-serif;font-size:10px;
@@ -2084,7 +2085,7 @@ async function loadSearch(body) {
 
 function selectStatus(s) {
   selectedStatus = s;
-  ['All','Delayed','Not Started','In Progress','Pending Inspection','Completed'].forEach(st => {
+  ['All','Delayed','Not Started','In Progress','Pending Inspection','Rework','Completed'].forEach(st => {
     const el = document.getElementById('ss-'+st.replace(/ /g,'-'));
     if (!el) return;
     el.style.background = st===s ? 'var(--navy)' : 'var(--bg)';
@@ -2119,13 +2120,15 @@ async function doSearch() {
       const isDone = r.status === 'Done';
       const isActive = r.status === 'In Progress';
       const isPendInsp = r.status === 'Pending Inspection';
+      const isRework = r.status === 'Rework';
 
-      const bdrColor = isDelayed?'var(--red)':isDone?'var(--green)':
+      const bdrColor = isRework?'#7c3aed':isDelayed?'var(--red)':isDone?'var(--green)':
                        isActive?'var(--orange)':isPendInsp?'#f59e0b':'var(--grey)';
-      const badgeBg  = isDelayed?'#fef2f2':isDone?'#f0fdf4':
+      const badgeBg  = isRework?'#f5f3ff':isDelayed?'#fef2f2':isDone?'#f0fdf4':
                        isActive?'#fff7ed':isPendInsp?'#fef3c7':'#f1f5f9';
-      const badgeFg  = isDelayed?'var(--red)':isDone?'var(--green)':
+      const badgeFg  = isRework?'#7c3aed':isDelayed?'var(--red)':isDone?'var(--green)':
                        isActive?'var(--orange)':isPendInsp?'#92400e':'var(--grey)';
+      const badgeTxt = isRework?'🔄 Rework':r.displayStatus;
 
       const div = document.createElement('div');
       div.style.cssText = `background:var(--card);border-left:3px solid ${bdrColor};
@@ -2136,7 +2139,7 @@ async function doSearch() {
           <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">
             ${r.jobNo} · S${r.seq}</div>
           <div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px;
-            background:${badgeBg};color:${badgeFg}">${r.displayStatus}</div>
+            background:${badgeBg};color:${badgeFg}">${badgeTxt}</div>
         </div>
         <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px">
           ${r.processName.substring(0,50)}</div>
@@ -2144,6 +2147,10 @@ async function doSearch() {
           👷 ${r.assignedWorker||r.defaultWorker||'—'} · ${r.planStart}
           ${r.delayHrs>0?`<span style="color:var(--red);font-weight:700"> · +${r.delayHrs}h late</span>`:''}
         </div>
+        ${isRework && r.rejectRemark ? `
+          <div style="background:#f5f3ff;border-radius:7px;padding:5px 9px;
+            font-size:10px;color:#7c3aed;border-left:2px solid #7c3aed;margin-bottom:6px">
+            ❌ Rejected: ${r.rejectRemark}</div>` : ''}
         ${r.notes?`<div style="background:#f8f9ff;border-radius:7px;padding:5px 9px;
           font-size:10px;color:var(--text);border-left:2px solid var(--blue2);margin-bottom:6px">
           📝 ${r.notes}</div>`:''}

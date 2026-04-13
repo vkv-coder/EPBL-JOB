@@ -1168,17 +1168,10 @@ async function loadTodayBoard(body) {
 
     body.innerHTML = `
       <div class="stat-row">
-        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.board.filter(x=>x.isOverdue&&!x.isInspection).length}</div><div class="stat-l">Overdue</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.overdue||0}</div><div class="stat-l">Overdue</div></div>
         <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${unassigned.length}</div><div class="stat-l">Unassigned</div></div>
         <div class="stat-box"><div class="stat-n" style="color:var(--green)">${assigned.length}</div><div class="stat-l">Assigned</div></div>
-      </div>
-      ${d.pendingInspection>0?`<div style="background:#fef3c7;border-radius:10px;padding:8px 12px;
-        margin-bottom:10px;font-size:11px;font-weight:700;color:#92400e;
-        display:flex;justify-content:space-between;align-items:center">
-        <span>🔍 ${d.pendingInspection} process(es) awaiting your inspection</span>
-        <button onclick="adminTab('inspect')" style="background:#f59e0b;color:#fff;
-          padding:4px 10px;border-radius:7px;font-size:10px;font-weight:700;border:none;cursor:pointer">
-          Inspect →</button></div>`:''}`;
+      </div>`;
 
 
     // ── TO BE ASSIGNED ──
@@ -1216,10 +1209,10 @@ function compactCard(container, p, needsAssign) {
   const isActive  = p.isActive;
   const isRework  = p.status==='Rework';
   const workers   = p.assignedWorkers?.map(w=>w.workerName).join(', ') || '';
-  const bdrColor  = isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const badgeBg   = isRework?'#f5f3ff':isOverdue?'#fef2f2':isActive?'#f0fdf4':'#fff7ed';
-  const badgeFg   = isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const badgeTxt  = isRework?'🔄 Rework':isOverdue?'🔴 Late':isActive?'🟢 Active':'🟠 Today';
+  const bdrColor  = p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
+  const badgeBg   = p.isManualAssigned?'#f5f3ff':isRework?'#f5f3ff':isOverdue?'#fef2f2':isActive?'#f0fdf4':'#fff7ed';
+  const badgeFg   = p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
+  const badgeTxt  = p.isManualAssigned?'🎯 Manual':isRework?'🔄 Rework':isOverdue?'🔴 Late':isActive?'🟢 Active':'🟠 Today';
 
   const div = document.createElement('div');
   div.style.cssText = `background:var(--card);border-left:3px solid ${bdrColor};

@@ -1214,11 +1214,11 @@ async function loadTodayBoard(body) {
 function compactCard(container, p, needsAssign) {
   const isOverdue = p.isOverdue;
   const isActive  = p.isActive;
+  const isRework  = p.status==='Rework';
   const workers   = p.assignedWorkers?.map(w=>w.workerName).join(', ') || '';
   const bdrColor  = isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
   const badgeBg   = isRework?'#f5f3ff':isOverdue?'#fef2f2':isActive?'#f0fdf4':'#fff7ed';
   const badgeFg   = isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const isRework  = p.status==='Rework';
   const badgeTxt  = isRework?'🔄 Rework':isOverdue?'🔴 Late':isActive?'🟢 Active':'🟠 Today';
 
   const div = document.createElement('div');

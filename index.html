@@ -1390,7 +1390,7 @@ async function openAssignModal(jobNo, seq, dept, procName) {
       return;
     }
     mb.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px">
-      🟢 Free = tap to assign &nbsp;·&nbsp; 🔴 Busy = on another job</div>`;
+      🟢 Free = tap to assign &nbsp;·&nbsp; 🔴 Busy = tap for parallel assign option</div>`;
 
     for (const w of workers) {
       const isBusy = w.status === 'Busy';
@@ -1409,9 +1409,13 @@ async function openAssignModal(jobNo, seq, dept, procName) {
           ${isBusy?'🔴 Busy':'🟢 Free'}</div>`;
       div.onclick = () => {
         if (isBusy) {
-          if (confirm(`${w.name} is busy on Job ${w.busyOn?.jobNo}.\nForce assign to this process?\nTheir current assignment will be marked Reassigned.`)) {
-            forceAssignWorker(w.workerId, w.name);
-          }
+          // Show options: Parallel or Force Reassign
+          const choice = confirm(
+            `${w.name} is busy on Job ${w.busyOn?.jobNo} Seq ${w.busyOn?.seq}.\n\n` +
+            `OK = Assign as PARALLEL (both jobs run simultaneously)\n` +
+            `Cancel = Do not assign`
+          );
+          if (choice) parallelAssignWorker(w.workerId, w.name);
         } else {
           assignWorker(w.workerId, w.name);
         }
@@ -1430,11 +1434,32 @@ async function assignWorker(workerId, workerName) {
       jobNo:assignCtx.jobNo, seq:assignCtx.seq, dept:assignCtx.dept,
       workerId, workerName, adminEmail:currentAdmin?.email||''
     });
+    if (d.busy) {
+      // Worker became busy between modal load and confirm — offer parallel
+      if (confirm(`${workerName} is now busy on Job ${d.busyJobNo} Seq ${d.busySeq}.\nAssign as PARALLEL instead?`)) {
+        parallelAssignWorker(workerId, workerName);
+      }
+      return;
+    }
     if (!d.success) throw new Error(d.error);
     showToast(`✅ ${workerName} assigned!`);
     clearWorkerCache();
-    const wa = d.whatsapp;
-    if (wa?.mobile) showToast(`💬 WhatsApp: ${wa.mobile} · ${wa.jobNo} S${wa.seq}`);
+    closeAssignModal();
+    loadAdminTab('today');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+async function parallelAssignWorker(workerId, workerName) {
+  try {
+    const d = await apiPost({
+      action:'assignWorker',
+      jobNo:assignCtx.jobNo, seq:assignCtx.seq, dept:assignCtx.dept,
+      workerId, workerName, adminEmail:currentAdmin?.email||'',
+      forceParallel: true
+    });
+    if (!d.success) throw new Error(d.error);
+    showToast(`✅ ${workerName} assigned as Parallel — both jobs running`);
+    clearWorkerCache();
     closeAssignModal();
     loadAdminTab('today');
   } catch(e) { showToast('⚠️ '+e.message); }

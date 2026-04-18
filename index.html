@@ -7,7 +7,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Job Tracker</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Noto+Sans+Gujarati:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -324,7 +323,6 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
   <div class="body">
     <div class="card">
       <div class="info-box">Only authorized Gmail accounts can access the Admin panel.</div>
-      <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="handleGoogleLogin" data-auto_select="false"></div>
       <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">Enter your Gmail to continue</div>
       <input class="field-input" id="admin-email-input" type="email" placeholder="your@gmail.com">
       <button class="btn-navy" onclick="adminEmailLogin()">Continue →</button>
@@ -1940,15 +1938,31 @@ async function loadSummary(body) {
       const bdrColor  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
       const statusBg  = isDone?(isDelayed?'#fef2f2':'#f0fdf4'):'#fff7ed';
       const statusFg  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
-
-      // Delay display
       const delayColor = isDelayed?'var(--red)':'var(--green)';
       const delayTxt   = j.delayText||'✓ On Time';
 
-      // Seq progress
-      const seqTxt = j.currentSeq && j.totalWorkProcs
-        ? `Seq ${j.currentSeq} of ${j.totalWorkProcs}`
-        : '';
+      // Progress: X done of Y total
+      const progressTxt = `${j.doneCount||0} of ${j.totalWorkProcs} done`;
+      const progressPct = j.totalWorkProcs ? Math.round((j.doneCount||0)/j.totalWorkProcs*100) : 0;
+
+      // Active processes HTML — show all active seqs with names
+      let activeProcsHtml = '';
+      if (j.activeProcs && j.activeProcs.length) {
+        for (const p of j.activeProcs) {
+          const badge = p.isManual
+            ? `<span style="background:#f5f3ff;color:#7c3aed;font-size:8px;font-weight:700;
+                padding:1px 5px;border-radius:4px;margin-left:4px">🎯 Manual</span>`
+            : '';
+          activeProcsHtml += `
+            <div style="background:var(--bg);border-radius:7px;padding:5px 8px;margin-top:4px;
+              border-left:3px solid var(--orange)">
+              <div style="font-size:10px;font-weight:700;color:var(--navy)">
+                S${p.seq} ${badge}</div>
+              <div style="font-size:10px;color:var(--text);margin-top:1px">
+                ${p.procName.substring(0,55)}</div>
+            </div>`;
+        }
+      }
 
       const div = document.createElement('div');
       div.style.cssText = `background:var(--card);border-left:4px solid ${bdrColor};
@@ -1966,10 +1980,24 @@ async function loadSummary(body) {
           <div style="text-align:right">
             <div style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;
               background:${statusBg};color:${statusFg};margin-bottom:4px">${j.status}</div>
-            ${seqTxt?`<div style="font-size:10px;font-weight:700;color:var(--navy);
-              background:var(--bg);padding:2px 8px;border-radius:7px">${seqTxt}</div>`:''}
+            <div style="font-size:10px;font-weight:700;color:var(--navy);
+              background:var(--bg);padding:2px 8px;border-radius:7px">${progressTxt}</div>
           </div>
         </div>
+
+        <!-- Progress bar -->
+        <div style="height:5px;background:var(--border);border-radius:5px;overflow:hidden;margin-bottom:8px">
+          <div style="height:100%;width:${progressPct}%;border-radius:5px;
+            background:linear-gradient(90deg,var(--blue2),var(--green))"></div>
+        </div>
+
+        <!-- Active processes -->
+        ${activeProcsHtml ? `
+          <div style="margin-bottom:8px">
+            <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;
+              letter-spacing:.5px;margin-bottom:2px">🟠 Currently Active</div>
+            ${activeProcsHtml}
+          </div>` : ''}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
           <div style="background:var(--bg);border-radius:8px;padding:7px 9px">

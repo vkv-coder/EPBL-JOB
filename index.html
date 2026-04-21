@@ -1940,6 +1940,9 @@ async function loadSummary(body) {
       const statusFg  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
       const delayColor = isDelayed?'var(--red)':j.delayDays<0?'var(--blue2)':'var(--green)';
       const delayTxt   = isDelayed?j.delayText:j.delayDays<0?`⚡ ${Math.abs(j.delayDays)} day${Math.abs(j.delayDays)>1?'s':''} early`:'✓ On Time';
+      const startDelayHtml = j.startDelayText ? `
+        <div style="font-size:9px;font-weight:600;color:${j.startDelayText.includes('late')?'var(--red)':'var(--blue2)'};
+          margin-top:2px">${j.startDelayText.includes('late')?'⚠️':'⚡'} ${j.startDelayText}</div>` : '';
 
       // Progress: X done of Y total
       const progressTxt = `${j.doneCount||0} of ${j.totalWorkProcs} done`;
@@ -2009,6 +2012,7 @@ async function loadSummary(body) {
             <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:2px">Actual</div>
             <div style="font-size:11px;font-weight:600;color:${isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)'}">
               ${j.actualStart?j.actualStart+' → '+(j.actualEnd||'Running...'):'Not started yet'}</div>
+            ${startDelayHtml}
           </div>
         </div>
 

@@ -1938,8 +1938,8 @@ async function loadSummary(body) {
       const bdrColor  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
       const statusBg  = isDone?(isDelayed?'#fef2f2':'#f0fdf4'):'#fff7ed';
       const statusFg  = isDone?(isDelayed?'var(--red)':'var(--green)'):'var(--orange)';
-      const delayColor = isDelayed?'var(--red)':'var(--green)';
-      const delayTxt   = j.delayText||'✓ On Time';
+      const delayColor = isDelayed?'var(--red)':j.delayDays<0?'var(--blue2)':'var(--green)';
+      const delayTxt   = isDelayed?j.delayText:j.delayDays<0?`⚡ ${Math.abs(j.delayDays)} day${Math.abs(j.delayDays)>1?'s':''} early`:'✓ On Time';
 
       // Progress: X done of Y total
       const progressTxt = `${j.doneCount||0} of ${j.totalWorkProcs} done`;

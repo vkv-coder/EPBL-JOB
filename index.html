@@ -1200,10 +1200,10 @@ function compactCard(container, p, needsAssign) {
   const isActive  = p.isActive;
   const isRework  = p.status==='Rework';
   const workers   = p.assignedWorkers?.map(w=>w.workerName).join(', ') || '';
-  const bdrColor  = p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const badgeBg   = p.isManualAssigned?'#f5f3ff':isRework?'#f5f3ff':isOverdue?'#fef2f2':isActive?'#f0fdf4':'#fff7ed';
-  const badgeFg   = p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':isActive?'var(--green)':'var(--orange)';
-  const badgeTxt  = p.isManualAssigned?'🎯 Manual':isRework?'🔄 Rework':isOverdue?'🔴 Late':isActive?'🟢 Active':'🟠 Today';
+  const badgeTxt  = isActive?'🟢 Active':p.isManualAssigned?'🎯 Manual':isRework?'🔄 Rework':isOverdue?'🔴 Late':'🟠 Today';
+  const bdrColor  = isActive?'var(--green)':p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':'var(--orange)';
+  const badgeBg   = isActive?'#f0fdf4':p.isManualAssigned?'#f5f3ff':isRework?'#f5f3ff':isOverdue?'#fef2f2':'#fff7ed';
+  const badgeFg   = isActive?'var(--green)':p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':'var(--orange)';
 
   const div = document.createElement('div');
   div.style.cssText = `background:var(--card);border-left:3px solid ${bdrColor};

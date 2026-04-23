@@ -1236,7 +1236,7 @@ function compactCard(container, p, needsAssign) {
       padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;
       font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:4px">
   ⏹</button>`:''}
-    ${(!p.isActive && workers)?`<button onclick="adminStart('${p.jobNo}',${p.seq})"
+   ${(p.status==='Pending' && workers)?`<button onclick="adminStart('${p.jobNo}',${p.seq})"
       style="background:#f0fdf4;color:var(--green);border:1.5px solid #bbf7d0;
       padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;
       font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:4px">

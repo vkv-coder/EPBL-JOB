@@ -1256,7 +1256,7 @@ async function adminStart(jobNo, seq) {
 }
 // ── REFRESH SHEET COLORS ──
 async function refreshSheetColors() {
-  showToast('🎨 Updating sheet colou
+ showToast('🎨 Updating sheet colours...');
   try {
     const d = await api({action:'colorSchedule'});
     if (d.success) showToast('✅ Sheet colours updated!');

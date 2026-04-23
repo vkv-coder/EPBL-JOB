@@ -1231,7 +1231,7 @@ function compactCard(container, p, needsAssign) {
       padding:6px 10px;border-radius:8px;font-family:'Syne',sans-serif;
       font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
       ${needsAssign?'👷 Assign':'↩ Change'}</button>
-   ${(p.status==='In Progress' && !p.isManualAssigned)?`<button onclick="openAdminStop('${p.jobNo}',${p.seq},'${p.processName.replace(/'/g,"\\'").substring(0,35)}','${workers||''}')"
+  ${(p.status==='In Progress')?`<button onclick="openAdminStop('${p.jobNo}',${p.seq},'${p.processName.replace(/'/g,"\\'").substring(0,35)}','${workers||''}')"
          style="background:#fef2f2;color:var(--red);border:1.5px solid #fecaca;
       padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;
       font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:4px">

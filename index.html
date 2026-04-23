@@ -1235,13 +1235,28 @@ function compactCard(container, p, needsAssign) {
       style="background:#fef2f2;color:var(--red);border:1.5px solid #fecaca;
       padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;
       font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:4px">
-      ⏹</button>`:''}`;
+  ⏹</button>`:''}
+    ${(!p.isActive && workers)?`<button onclick="adminStart('${p.jobNo}',${p.seq})"
+      style="background:#f0fdf4;color:var(--green);border:1.5px solid #bbf7d0;
+      padding:6px 8px;border-radius:8px;font-family:'Syne',sans-serif;
+      font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:4px">
+      ▶</button>`:''}`;
   container.appendChild(div);
 }
-
+// ── ADMIN START ──
+async function adminStart(jobNo, seq) {
+  if (!confirm(`Start Job ${jobNo} Seq ${seq}?\nThis will stamp ActStart as now.`)) return;
+  try {
+    const d = await apiPost({action:'stampStart', jobNo, seq,
+                             adminEmail:currentAdmin?.email||''});
+    if (!d.success) throw new Error(d.error);
+    showToast('✅ Started — '+d.actStart);
+    loadAdminTab('today');
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
 // ── REFRESH SHEET COLORS ──
 async function refreshSheetColors() {
-  showToast('🎨 Updating sheet colours...');
+  showToast('🎨 Updating sheet colou
   try {
     const d = await api({action:'colorSchedule'});
     if (d.success) showToast('✅ Sheet colours updated!');

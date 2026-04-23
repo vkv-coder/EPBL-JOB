@@ -1200,7 +1200,7 @@ function compactCard(container, p, needsAssign) {
   const isActive  = p.isActive;
   const isRework  = p.status==='Rework';
   const workers   = p.assignedWorkers?.map(w=>w.workerName).join(', ') || '';
-  const badgeTxt  = isActive?'🟢 Active':p.isManualAssigned?'🎯 Manual':isRework?'🔄 Rework':isOverdue?'🔴 Late':'🟠 Today';
+  const badgeTxt  = p.status==='In Progress'?'🟢 Active':p.isManualAssigned?'🎯 Manual':isRework?'🔄 Rework':isOverdue?'🔴 Late':workers?'⚪ Not Started':'🟠 Today';
   const bdrColor  = isActive?'var(--green)':p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':'var(--orange)';
   const badgeBg   = isActive?'#f0fdf4':p.isManualAssigned?'#f5f3ff':isRework?'#f5f3ff':isOverdue?'#fef2f2':'#fff7ed';
   const badgeFg   = isActive?'var(--green)':p.isManualAssigned?'#7c3aed':isRework?'#7c3aed':isOverdue?'var(--red)':'var(--orange)';

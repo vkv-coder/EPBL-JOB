@@ -2074,8 +2074,9 @@ function openAdminStop(jobNo, seq, procName, workerName) {
   const d = new Date(); d.setDate(d.getDate()-1); d.setHours(17,30,0,0);
   const local = new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   document.getElementById('asm-datetime').value = local;
-  document.getElementById('asm-remark').value = 'Worker absent';
-  document.getElementById('admin-stop-modal').classList.add('open');
+document.getElementById('asm-remark').value = 'Worker absent';
+  document.getElementById('asm-excess-reason').value = '';
+  document.getElementById('admin-stop-modal').classList.add('open');  
 }
 
 function closeAdminStop() {
@@ -2090,11 +2091,12 @@ async function doAdminStop() {
   const btn = document.getElementById('asm-save');
   btn.disabled=true; btn.textContent='⏳ Processing...';
   try {
+   const excessReason = document.getElementById('asm-excess-reason').value.trim();
     const d = await apiPost({action:'adminStop',
       jobNo:adminStopCtx.jobNo, seq:adminStopCtx.seq,
       actEndTime: new Date(actEndTime).toISOString(),
       adminEmail:currentAdmin?.email||'',
-      remark});
+      remark, excessReason});
     if (!d.success) throw new Error(d.error);
     showToast('✅ Process stopped. Inspection pending.');
     closeAdminStop();

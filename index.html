@@ -1421,10 +1421,12 @@ async function loadManualSeqs(){
   try{
     const d=await api({action:'getJobSchedule',jobNo});
     if(!d.success)throw new Error(d.error);
-    const notStarted=d.procs.filter(p=>p.status==='Pending'&&!p.isInspection);
-    const active=d.procs.filter(p=>p.status==='In Progress'||p.status==='Pending Inspection');
+    const notStarted=d.procs.filter(p=>(p.status==='Pending'||p.status==='Rework')&&!p.isInspection);
+    const active=d.procs.filter(p=>(p.status==='In Progress'||p.status==='Pending Inspection')&&!p.isInspection);
     const done=d.procs.filter(p=>p.status==='Done');
-    if(!notStarted.length){seqDiv.innerHTML=`<div class="card" style="text-align:center;color:var(--muted);font-size:13px">No pending sequences available.</div>`;return;}
+    // Show all non-done, non-inspection seqs for manual assign
+    const assignable=d.procs.filter(p=>p.status!=='Done'&&!p.isInspection);
+    if(!assignable.length){seqDiv.innerHTML=`<div class="card" style="text-align:center;color:var(--muted);font-size:13px">No sequences available for manual assign.</div>`;return;}
     seqDiv.innerHTML=`<div class="card">
       <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--navy);margin-bottom:8px">
         ${jobNo} — ${done.length} done · ${active.length} active · ${notStarted.length} pending
@@ -1433,7 +1435,7 @@ async function loadManualSeqs(){
       <div class="field-label">Select Sequence</div>
       <select class="field-input" id="ma-seq" style="margin-bottom:10px">
         <option value="">-- Select Sequence --</option>
-        ${notStarted.map(p=>`<option value="${p.seq}">S${p.seq} · ${p.processName.substring(0,50)}</option>`).join('')}
+        ${assignable.map(p=>`<option value="${p.seq}">S${p.seq} · ${p.status==='In Progress'?'🟠 ':''}${p.status==='Rework'?'🔄 ':''} ${p.processName.substring(0,50)}</option>`).join('')}
       </select>
       <div class="field-label">Select Worker</div>
       <select class="field-input" id="ma-worker" style="margin-bottom:14px">

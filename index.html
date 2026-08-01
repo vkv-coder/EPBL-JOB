@@ -213,9 +213,22 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
     <button class="back-btn" onclick="showScreen('scr-splash')">← Back</button>
   </div></div>
   <div class="body"><div class="card">
-    <div class="info-box">Only authorized Gmail accounts can access Admin panel.</div>
+    <div class="info-box">Only authorized Gmail accounts can access Admin panel. We'll email you a 6-digit code to confirm it's really you.</div>
     <input class="field-input" id="admin-email-input" type="email" placeholder="your@gmail.com">
-    <button class="btn-navy" onclick="adminEmailLogin()">Continue →</button>
+    <button class="btn-navy" id="admin-continue-btn" onclick="adminEmailLogin()">Send Code →</button>
+  </div></div>
+</div>
+
+<!-- ADMIN OTP -->
+<div class="screen" id="scr-admin-otp">
+  <div class="topbar"><div class="topbar-row">
+    <div><div class="tb-title">🔐 Enter Code</div><div class="tb-sub" id="admin-otp-sub">Check your email</div></div>
+    <button class="back-btn" onclick="showScreen('scr-admin-login')">← Back</button>
+  </div></div>
+  <div class="body"><div class="card">
+    <div class="info-box">We've emailed a 6-digit code to your Gmail address. Enter it below.</div>
+    <input class="field-input" id="admin-otp-input" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code">
+    <button class="btn-main" id="admin-otp-btn" onclick="adminOtpVerify()">Verify & Continue</button>
   </div></div>
 </div>
 
@@ -482,20 +495,41 @@ function saveWorkerSession(d){
 function workerLogout(){currentWorker=null;localStorage.removeItem('worker');showScreen('scr-splash');}
 
 // ── ADMIN AUTH ──
+let pendingAdminEmail='';
 async function adminEmailLogin(){
   const email=document.getElementById('admin-email-input').value.trim();
   if(!email){showToast('⚠️ Enter Gmail address');return;}
+  const btn=document.getElementById('admin-continue-btn');
+  btn.textContent='Sending...';btn.disabled=true;
   try{
-    const d=await apiPost({action:'verifyAdmin',email});
+    const d=await apiPost({action:'requestAdminOtp',email});
+    btn.textContent='Send Code →';btn.disabled=false;
     if(d.success){
-      currentAdmin={email};
+      pendingAdminEmail=email;
+      document.getElementById('admin-otp-sub').textContent=email;
+      document.getElementById('admin-otp-input').value='';
+      showScreen('scr-admin-otp');
+      showToast('📧 Code sent to '+email);
+    }else showToast('⚠️ '+(d.error||'Access denied'));
+  }catch(e){btn.textContent='Send Code →';btn.disabled=false;showToast('⚠️ '+e.message);}
+}
+async function adminOtpVerify(){
+  const code=document.getElementById('admin-otp-input').value.trim();
+  if(!code){showToast('⚠️ Enter the code');return;}
+  const btn=document.getElementById('admin-otp-btn');
+  btn.textContent='Verifying...';btn.disabled=true;
+  try{
+    const d=await apiPost({action:'verifyAdminOtp',email:pendingAdminEmail,code});
+    btn.textContent='Verify & Continue';btn.disabled=false;
+    if(d.success){
+      currentAdmin={email:pendingAdminEmail};
       localStorage.setItem('admin',JSON.stringify(currentAdmin));
-      document.getElementById('admin-email-display').textContent=email;
+      document.getElementById('admin-email-display').textContent=pendingAdminEmail;
       showScreen('scr-admin-home');
       renderAdminMenu();
       showToast('✅ Welcome Admin!');
-    }else showToast('⚠️ '+(d.error||'Access denied'));
-  }catch(e){showToast('⚠️ '+e.message);}
+    }else showToast('⚠️ '+(d.error||'Incorrect or expired code'));
+  }catch(e){btn.textContent='Verify & Continue';btn.disabled=false;showToast('⚠️ '+e.message);}
 }
 function adminLogout(){currentAdmin=null;localStorage.removeItem('admin');showScreen('scr-splash');}
 

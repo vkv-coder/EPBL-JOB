@@ -756,16 +756,23 @@ function adminTab(tab){
 }
 
 async function runAdminTabLoader(tab,body){
-  if(tab==='today')await loadTodayBoard(body);
-  else if(tab==='tomorrow')await loadTomorrowBoard(body);
-  else if(tab==='jobs')await loadAdminJobs(body);
-  else if(tab==='workers')await loadWorkerMgmt(body);
-  else if(tab==='inspect')await loadInspectBoard(body);
-  else if(tab==='board')await loadWorkerBoard(body);
-  else if(tab==='create')renderCreateJob(body);
-  else if(tab==='summary')await loadSummary(body);
-  else if(tab==='search')await loadSearch(body);
-  else if(tab==='manual')await loadManualAssign(body);
+  // Single catch-all so a bug in any one tab (present or future) shows an
+  // inline error in that tab only, instead of an unhandled rejection that
+  // leaves it stuck on the spinner — every other tab/menu stays unaffected.
+  try{
+    if(tab==='today')await loadTodayBoard(body);
+    else if(tab==='tomorrow')await loadTomorrowBoard(body);
+    else if(tab==='jobs')await loadAdminJobs(body);
+    else if(tab==='workers')await loadWorkerMgmt(body);
+    else if(tab==='inspect')await loadInspectBoard(body);
+    else if(tab==='board')await loadWorkerBoard(body);
+    else if(tab==='create')renderCreateJob(body);
+    else if(tab==='summary')await loadSummary(body);
+    else if(tab==='search')await loadSearch(body);
+    else if(tab==='manual')await loadManualAssign(body);
+  }catch(e){
+    body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;
+  }
 }
 
 // Only used for cacheable tabs — 'create'/'search' wire up their own DOM

@@ -437,6 +437,13 @@ const API='https://script.google.com/macros/s/AKfycbzdpCpn88jMAENuvqT8FQB6exEeO6
 let lang=localStorage.getItem('lang')||'en';
 let currentWorker=JSON.parse(localStorage.getItem('worker')||'null');
 let currentAdmin=JSON.parse(localStorage.getItem('admin')||'null');
+// ── ADMIN TAB CACHE (stale-while-revalidate — makes menu switching feel instant) ──
+let currentAdminTab=null;
+let adminTabCache={};
+const ADMIN_TAB_CACHE_TTL=20000;
+const ADMIN_TAB_NO_CACHE=new Set(['create','search']); // forms / self-filtering views — always fresh
+let inspBadgeCount=0,inspBadgeTime=0;
+const INSP_BADGE_TTL=30000;
 let currentJob=null,remarkCtx=null,assignCtx=null,allDepts=[],selType='',adminStopCtx=null,adminNoteCtx=null;
 
 let selectedStatus='All';
@@ -701,9 +708,16 @@ async function saveRemark(){
 
 // ── ADMIN MENU ──
 async function renderAdminMenu(){
+  const now=Date.now();
+  if((now-inspBadgeTime)>INSP_BADGE_TTL){
+    // Don't block the menu paint on this — refresh in background and re-render when it lands.
+    api({action:'getPendingInspections'}).then(d=>{
+      if(d.success){inspBadgeCount=d.count;inspBadgeTime=Date.now();
+        if(document.getElementById('scr-admin-home').classList.contains('active'))renderAdminMenu();}
+    }).catch(()=>{});
+  }
   const body=document.getElementById('admin-menu-body');
-  let inspCount=0;
-  try{const d=await api({action:'getPendingInspections'});if(d.success)inspCount=d.count;}catch(e){}
+  const inspCount=inspBadgeCount;
   const items=[
     {tab:'today',   icon:'📋',bg:'#dbeafe',label:'Today Board',   sub:'Assign · ▶ Start · ⏹ Stop jobs'},
     {tab:'inspect', icon:'🔍',bg:'#fef3c7',label:'Inspect',       sub:'Approve or reject completed work',badge:inspCount},
@@ -736,13 +750,12 @@ async function renderAdminMenu(){
 function adminTab(tab){
   const titles={today:'📋 Today',tomorrow:'🌅 Tomorrow',inspect:'🔍 Inspect',board:'👷 Worker Board',jobs:'🏭 Jobs',workers:'⚙️ Management',create:'➕ New Job',summary:'📊 Summary',manual:'🎯 Manual Assign',search:'🔎 Search'};
   document.getElementById('admin-content-title').textContent=titles[tab]||tab;
+  currentAdminTab=tab;
   showScreen('scr-admin-content');
   loadAdminTab(tab);
 }
 
-async function loadAdminTab(tab){
-  const body=document.getElementById('admin-body');
-  body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
+async function runAdminTabLoader(tab,body){
   if(tab==='today')await loadTodayBoard(body);
   else if(tab==='tomorrow')await loadTomorrowBoard(body);
   else if(tab==='jobs')await loadAdminJobs(body);
@@ -753,6 +766,36 @@ async function loadAdminTab(tab){
   else if(tab==='summary')await loadSummary(body);
   else if(tab==='search')await loadSearch(body);
   else if(tab==='manual')await loadManualAssign(body);
+}
+
+// Only used for cacheable tabs — 'create'/'search' wire up their own DOM
+// lookups synchronously during render, so they always render straight into
+// the live #admin-body instead (see loadAdminTab).
+// Renders into a detached scratch element first so an in-flight background
+// refresh never blanks the screen with a spinner while cached content shows.
+async function refreshAdminTabInBackground(tab){
+  const scratch=document.createElement('div');
+  await runAdminTabLoader(tab,scratch);
+  adminTabCache[tab]={html:scratch.innerHTML,time:Date.now()};
+  if(currentAdminTab===tab)document.getElementById('admin-body').innerHTML=scratch.innerHTML;
+}
+
+async function loadAdminTab(tab,force){
+  const body=document.getElementById('admin-body');
+  if(ADMIN_TAB_NO_CACHE.has(tab)){
+    body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
+    await runAdminTabLoader(tab,body);
+    return;
+  }
+  const cached=adminTabCache[tab];
+  const fresh=cached&&(Date.now()-cached.time)<ADMIN_TAB_CACHE_TTL;
+  if(!force&&fresh){
+    body.innerHTML=cached.html;
+    refreshAdminTabInBackground(tab).catch(()=>{}); // silent revalidate
+    return;
+  }
+  body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
+  await refreshAdminTabInBackground(tab);
 }
 
 // ── TODAY BOARD ──
@@ -885,7 +928,7 @@ async function assignFromCard(jobNo,seq,dept,cardId){
       showToast(`✅ ${workerName} assigned!`);
     }
     allWorkersCache=[];// clear cache
-    loadAdminTab('today');
+    loadAdminTab('today',true);
   }catch(e){showToast('⚠️ '+e.message);btn.disabled=false;btn.textContent=origTxt;}
 }
 
@@ -897,7 +940,7 @@ async function adminStart(jobNo,seq,btn){
     const d=await apiPost({action:'stampStart',jobNo,seq,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
     showToast('✅ Started — '+d.actStart);
-    loadAdminTab('today');
+    loadAdminTab('today',true);
   }catch(e){showToast('⚠️ '+e.message);btn.disabled=false;btn.textContent=orig;}
 }
 
@@ -942,7 +985,7 @@ async function doAdminStop(){
       },400);
     }
     closeAdminStop();
-    loadAdminTab('today');
+    loadAdminTab('today',true);
   }catch(e){showToast('⚠️ '+e.message);}
   finally{btn.disabled=false;btn.textContent='⏹ Stop Process';}
 }
@@ -1018,7 +1061,7 @@ async function openAssignModal(jobNo,seq,dept,procName){
         const d=await apiPost({action:'assignWorker',jobNo:assignCtx.jobNo,seq:assignCtx.seq,dept:assignCtx.dept||'Default',workerId:w.workerId,workerName:w.name,adminEmail:currentAdmin?.email||''});
         if(d.busy){if(!confirm(w.name+' is busy. Assign as PARALLEL?'))return;await apiPost({action:'assignWorker',jobNo:assignCtx.jobNo,seq:assignCtx.seq,dept:assignCtx.dept||'Default',workerId:w.workerId,workerName:w.name,adminEmail:currentAdmin?.email||'',forceParallel:true});}
         else if(!d.success)throw new Error(d.error);
-        showToast('✅ '+w.name+' assigned!');allWorkersCache=[];closeAssignModal();loadAdminTab(adminCurrentTab);
+        showToast('✅ '+w.name+' assigned!');allWorkersCache=[];closeAssignModal();loadAdminTab(currentAdminTab,true);
       }catch(e){showToast('⚠️ '+e.message);}
     };
     mb.appendChild(div);
@@ -1075,7 +1118,7 @@ async function approveInspection(inspId,jobNo,seq){
     const d=await apiPost({action:'approveInspection',inspId,jobNo,seq,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
     showToast('✅ Approved! Assign next process from Today Board.');
-    loadAdminTab('inspect');
+    inspBadgeTime=0;loadAdminTab('inspect',true);
   }catch(e){showToast('⚠️ '+e.message);btn.disabled=false;btn.textContent='✅ Approve';}
 }
 async function rejectInspection(inspId,jobNo,seq,workerName,workerMobile){
@@ -1083,7 +1126,7 @@ async function rejectInspection(inspId,jobNo,seq,workerName,workerMobile){
   try{
     const d=await apiPost({action:'rejectInspection',inspId,jobNo,seq,workerName,workerMobile,remarks});
     if(!d.success)throw new Error(d.error);
-    showToast('❌ Rejected — rework assigned');loadAdminTab('inspect');
+    showToast('❌ Rejected — rework assigned');inspBadgeTime=0;loadAdminTab('inspect',true);
   }catch(e){showToast('⚠️ '+e.message);}
 }
 
@@ -1156,7 +1199,7 @@ async function deleteJob(jobNo){
   try{
     const d=await apiPost({action:'deleteJob',jobNo,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
-    showToast(`✅ Job ${jobNo} deleted`);loadAdminTab('jobs');
+    showToast(`✅ Job ${jobNo} deleted`);loadAdminTab('jobs',true);
   }catch(e){showToast('⚠️ '+e.message);}
 }
 
@@ -1189,7 +1232,7 @@ async function resetWorkerPin(workerId,name){
   try{
     const d=await apiPost({action:'resetPin',workerId,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
-    showToast(`✅ PIN reset for ${name}`);loadAdminTab('workers');
+    showToast(`✅ PIN reset for ${name}`);loadAdminTab('workers',true);
   }catch(e){showToast('⚠️ '+e.message);}
 }
 async function toggleWorker(workerId,status,name){
@@ -1197,7 +1240,7 @@ async function toggleWorker(workerId,status,name){
   try{
     const d=await apiPost({action:'toggleWorker',workerId,active});
     if(!d.success)throw new Error(d.error);
-    showToast(`✅ ${name} ${active?'activated':'deactivated'}`);loadAdminTab('workers');
+    showToast(`✅ ${name} ${active?'activated':'deactivated'}`);loadAdminTab('workers',true);
   }catch(e){showToast('⚠️ '+e.message);}
 }
 
@@ -1220,7 +1263,7 @@ async function addWorker(){
   try{
     const d=await apiPost({action:'createWorker',name,mobile,dept1,dept2,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
-    showToast(`✅ ${name} added!`);closeAddWorker();loadAdminTab('workers');
+    showToast(`✅ ${name} added!`);closeAddWorker();loadAdminTab('workers',true);
   }catch(e){showToast('⚠️ '+e.message);}
   finally{btn.textContent='Add Worker';btn.disabled=false;}
 }

@@ -759,6 +759,9 @@ async function runAdminTabLoader(tab,body){
   // Single catch-all so a bug in any one tab (present or future) shows an
   // inline error in that tab only, instead of an unhandled rejection that
   // leaves it stuck on the spinner — every other tab/menu stays unaffected.
+  // Returns true/false so callers can tell a real render apart from an error
+  // card (see refreshAdminTabInBackground — a failed background refresh must
+  // never be mistaken for real data).
   try{
     if(tab==='today')await loadTodayBoard(body);
     else if(tab==='tomorrow')await loadTomorrowBoard(body);
@@ -770,8 +773,10 @@ async function runAdminTabLoader(tab,body){
     else if(tab==='summary')await loadSummary(body);
     else if(tab==='search')await loadSearch(body);
     else if(tab==='manual')await loadManualAssign(body);
+    return true;
   }catch(e){
     body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;
+    return false;
   }
 }
 
@@ -780,9 +785,18 @@ async function runAdminTabLoader(tab,body){
 // the live #admin-body instead (see loadAdminTab).
 // Renders into a detached scratch element first so an in-flight background
 // refresh never blanks the screen with a spinner while cached content shows.
-async function refreshAdminTabInBackground(tab){
+async function refreshAdminTabInBackground(tab,silent){
   const scratch=document.createElement('div');
-  await runAdminTabLoader(tab,scratch);
+  const ok=await runAdminTabLoader(tab,scratch);
+  if(!ok){
+    // A silent (background) revalidation failing must never destroy good
+    // content already on screen or poison the cache with an error card —
+    // just give up quietly and keep showing what's already there. A
+    // non-silent (foreground) failure still surfaces the error since there's
+    // nothing better to show in that case.
+    if(!silent && currentAdminTab===tab) document.getElementById('admin-body').innerHTML=scratch.innerHTML;
+    return;
+  }
   adminTabCache[tab]={html:scratch.innerHTML,time:Date.now()};
   if(currentAdminTab===tab)document.getElementById('admin-body').innerHTML=scratch.innerHTML;
 }
@@ -798,11 +812,11 @@ async function loadAdminTab(tab,force){
   const fresh=cached&&(Date.now()-cached.time)<ADMIN_TAB_CACHE_TTL;
   if(!force&&fresh){
     body.innerHTML=cached.html;
-    refreshAdminTabInBackground(tab).catch(()=>{}); // silent revalidate
+    refreshAdminTabInBackground(tab,true).catch(()=>{}); // silent revalidate
     return;
   }
   body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
-  await refreshAdminTabInBackground(tab);
+  await refreshAdminTabInBackground(tab,false);
 }
 
 // ── TODAY BOARD ──

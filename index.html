@@ -911,7 +911,7 @@ function todayCard(container,p,workerOpts){
     <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:8px">👷 ${assignedWorker} — In Progress</div>`}
     <!-- Row 4: START / STOP buttons -->
     <div style="display:flex;gap:6px">
-      ${(p.status==='Pending'&&isAssigned)?`
+      ${((p.status==='Pending'||p.status==='Rework')&&isAssigned)?`
       <button onclick="adminStart('${p.jobNo}',${p.seq},this)"
         style="flex:1;background:var(--green);color:#fff;border:none;padding:10px;border-radius:9px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">
         ▶ Start</button>`:''}
@@ -922,7 +922,7 @@ function todayCard(container,p,workerOpts){
       ${(!isActive&&!isAssigned)?`
       <div style="flex:1;text-align:center;font-size:10px;color:var(--muted);padding:8px;background:var(--bg);border-radius:9px">
         Select worker above → Assign → then Start</div>`:''}
-      ${(!isActive&&isAssigned&&p.status!=='Pending')?`
+      ${(!isActive&&isAssigned&&p.status!=='Pending'&&p.status!=='Rework')?`
       <div style="flex:1;text-align:center;font-size:10px;color:var(--muted);padding:8px;background:var(--bg);border-radius:9px">
         ${p.status}</div>`:''}
     </div>`;

@@ -444,6 +444,8 @@ const ADMIN_TAB_CACHE_TTL=20000;
 const ADMIN_TAB_NO_CACHE=new Set(['create','search']); // forms / self-filtering views — always fresh
 let inspBadgeCount=0,inspBadgeTime=0;
 const INSP_BADGE_TTL=30000;
+let weekBadgeCount=0,weekBadgeTime=0;
+const WEEK_BADGE_TTL=30000;
 let currentJob=null,remarkCtx=null,assignCtx=null,allDepts=[],selType='',adminStopCtx=null,adminNoteCtx=null;
 
 let selectedStatus='All';
@@ -716,13 +718,20 @@ async function renderAdminMenu(){
         if(document.getElementById('scr-admin-home').classList.contains('active'))renderAdminMenu();}
     }).catch(()=>{});
   }
+  if((now-weekBadgeTime)>WEEK_BADGE_TTL){
+    api({action:'getWeekBoard'}).then(d=>{
+      if(d.success){weekBadgeCount=d.runningDelayed+d.overdueUnstarted;weekBadgeTime=Date.now();
+        if(document.getElementById('scr-admin-home').classList.contains('active'))renderAdminMenu();}
+    }).catch(()=>{});
+  }
   const body=document.getElementById('admin-menu-body');
   const inspCount=inspBadgeCount;
+  const weekCount=weekBadgeCount;
   const items=[
     {tab:'today',   icon:'📋',bg:'#dbeafe',label:'Today Board',   sub:'Assign · ▶ Start · ⏹ Stop jobs'},
     {tab:'inspect', icon:'🔍',bg:'#fef3c7',label:'Inspect',       sub:'Approve or reject completed work',badge:inspCount},
     {tab:'tomorrow',icon:'🌅',bg:'#f0fdf4',label:'Tomorrow',      sub:'Plan ahead · Pre-assign workers'},
-    {tab:'week',    icon:'📆',bg:'#eef2ff',label:'This Week',     sub:'7-day plan · running-late backlog'},
+    {tab:'week',    icon:'📆',bg:'#eef2ff',label:'This Week',     sub:'7-day plan · running-late backlog',badge:weekCount},
     {tab:'board',   icon:'👷',bg:'#f3e8ff',label:'Worker Board',  sub:'See who is free · busy · delayed'},
     {tab:'jobs',    icon:'🏭',bg:'#fff7ed',label:'All Jobs',      sub:'Job progress · delete jobs'},
     {tab:'workers', icon:'⚙️',bg:'#f1f5f9',label:'Management',    sub:'Add workers · reset PIN'},

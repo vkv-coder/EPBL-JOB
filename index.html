@@ -869,6 +869,7 @@ function todayCard(container,p,workerOpts){
   const isOverdue=p.isOverdue;
   const assignedWorker=p.assignedWorkers?.map(w=>w.workerName).join(', ')||'';
   const isAssigned=!!assignedWorker;
+  const assignedWorkerEsc=assignedWorker.replace(/'/g,"\\'");
 
   // Status badge
   const badgeTxt=isActive?'🟢 Active':p.isManualAssigned?'🎯 Manual':isRework?'🔄 Rework':isOverdue?'🔴 Overdue':isAssigned?'⚪ Not Started':'🟠 Today';
@@ -915,7 +916,7 @@ function todayCard(container,p,workerOpts){
         style="flex:1;background:var(--green);color:#fff;border:none;padding:10px;border-radius:9px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">
         ▶ Start</button>`:''}
       ${isActive?`
-      <button onclick="openAdminStop('${p.jobNo}',${p.seq},'${p.processName.replace(/'/g,"\\'").substring(0,40)}','${assignedWorker}')"
+      <button onclick="openAdminStop('${p.jobNo}',${p.seq},'${p.processName.replace(/'/g,"\\'").substring(0,40)}','${assignedWorkerEsc}')"
         style="flex:1;background:var(--orange);color:#fff;border:none;padding:10px;border-radius:9px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">
         ⏹ Stop</button>`:''}
       ${(!isActive&&!isAssigned)?`
@@ -1122,7 +1123,7 @@ async function loadInspectBoard(body){
             style="flex:1;background:var(--red);color:#fff;padding:9px;border-radius:9px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer">❌ Reject</button>
         </div>
         <div id="confirm-reject-${p.inspId}" style="display:none;margin-top:6px">
-          <button onclick="rejectInspection('${p.inspId}','${p.jobNo}',${p.seq},'${p.workerName}','')"
+          <button onclick="rejectInspection('${p.inspId}','${p.jobNo}',${p.seq},'${(p.workerName||'').replace(/'/g,"\\'")}','')"
             style="width:100%;background:#7f1d1d;color:#fff;padding:9px;border-radius:9px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer">❌ Confirm Reject & Rework</button>
         </div>`;
       body.appendChild(div);

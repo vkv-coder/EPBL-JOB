@@ -722,6 +722,7 @@ async function renderAdminMenu(){
     {tab:'today',   icon:'📋',bg:'#dbeafe',label:'Today Board',   sub:'Assign · ▶ Start · ⏹ Stop jobs'},
     {tab:'inspect', icon:'🔍',bg:'#fef3c7',label:'Inspect',       sub:'Approve or reject completed work',badge:inspCount},
     {tab:'tomorrow',icon:'🌅',bg:'#f0fdf4',label:'Tomorrow',      sub:'Plan ahead · Pre-assign workers'},
+    {tab:'week',    icon:'📆',bg:'#eef2ff',label:'This Week',     sub:'7-day plan · running-late backlog'},
     {tab:'board',   icon:'👷',bg:'#f3e8ff',label:'Worker Board',  sub:'See who is free · busy · delayed'},
     {tab:'jobs',    icon:'🏭',bg:'#fff7ed',label:'All Jobs',      sub:'Job progress · delete jobs'},
     {tab:'workers', icon:'⚙️',bg:'#f1f5f9',label:'Management',    sub:'Add workers · reset PIN'},
@@ -748,7 +749,7 @@ async function renderAdminMenu(){
 }
 
 function adminTab(tab){
-  const titles={today:'📋 Today',tomorrow:'🌅 Tomorrow',inspect:'🔍 Inspect',board:'👷 Worker Board',jobs:'🏭 Jobs',workers:'⚙️ Management',create:'➕ New Job',summary:'📊 Summary',manual:'🎯 Manual Assign',search:'🔎 Search'};
+  const titles={today:'📋 Today',tomorrow:'🌅 Tomorrow',week:'📆 This Week',inspect:'🔍 Inspect',board:'👷 Worker Board',jobs:'🏭 Jobs',workers:'⚙️ Management',create:'➕ New Job',summary:'📊 Summary',manual:'🎯 Manual Assign',search:'🔎 Search'};
   document.getElementById('admin-content-title').textContent=titles[tab]||tab;
   currentAdminTab=tab;
   showScreen('scr-admin-content');
@@ -765,6 +766,7 @@ async function runAdminTabLoader(tab,body){
   try{
     if(tab==='today')await loadTodayBoard(body);
     else if(tab==='tomorrow')await loadTomorrowBoard(body);
+    else if(tab==='week')await loadWeekBoard(body);
     else if(tab==='jobs')await loadAdminJobs(body);
     else if(tab==='workers')await loadWorkerMgmt(body);
     else if(tab==='inspect')await loadInspectBoard(body);
@@ -1038,6 +1040,55 @@ async function loadTomorrowBoard(body){
       body.appendChild(sec);renderBoardCards(body,tom2,false);
     }
   }catch(e){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;}
+}
+
+async function loadWeekBoard(body){
+  try{
+    const d=await api({action:'getWeekBoard'});
+    if(!d.success)throw new Error(d.error);
+    body.innerHTML=`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:12px">📆 Next 7 Days</div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-n" style="color:var(--navy)">${d.total}</div><div class="stat-l">Total</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--red)">${d.runningDelayed}</div><div class="stat-l">Running Late</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:var(--orange)">${d.overdueUnstarted}</div><div class="stat-l">Overdue</div></div>
+      </div>`;
+    if(!d.board.length){body.innerHTML+=`<div class="empty"><div class="empty-icon">✅</div><div class="empty-txt">Nothing planned this week</div></div>`;return;}
+    const late=d.board.filter(p=>p.isRunningDelayed);
+    if(late.length){
+      const sec=document.createElement('div');
+      sec.innerHTML=`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--red);margin-bottom:8px">🔴 RUNNING LATE (${late.length})</div>`;
+      body.appendChild(sec);renderWeekDelayCards(body,late);
+    }
+    const overdue=d.board.filter(p=>p.isOverdueUnstarted);
+    if(overdue.length){
+      const sec=document.createElement('div');
+      sec.innerHTML=`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--orange);margin:10px 0 8px">🟠 OVERDUE · NOT STARTED (${overdue.length})</div>`;
+      body.appendChild(sec);renderBoardCards(body,overdue,true);
+    }
+    const upcoming=d.board.filter(p=>!p.isRunningDelayed&&!p.isOverdueUnstarted);
+    if(upcoming.length){
+      const sec=document.createElement('div');
+      sec.innerHTML=`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--blue2);margin:10px 0 8px">📅 UPCOMING THIS WEEK (${upcoming.length})</div>`;
+      body.appendChild(sec);renderBoardCards(body,upcoming,false);
+    }
+  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;}
+}
+
+function renderWeekDelayCards(container,procs){
+  for(const p of procs){
+    const workers=p.assignedWorkers&&p.assignedWorkers.length?p.assignedWorkers.map(w=>w.workerName).join(', '):'Unassigned';
+    const div=document.createElement('div');
+    div.style.cssText=`background:var(--card);border-left:4px solid var(--red);border-radius:12px;padding:10px 12px;margin-bottom:7px;box-shadow:0 2px 8px rgba(13,27,62,.07)`;
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy)">${p.jobNo} · S${p.seq}</div>
+        <div style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;background:#fef2f2;color:var(--red)">🔴 +${p.delayHrs}h late</div>
+      </div>
+      <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">${p.processName.substring(0,55)}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Plan End: ${p.planEnd}</div>
+      <div style="font-size:10px;font-weight:600;color:var(--red)">👷 ${workers}</div>`;
+    container.appendChild(div);
+  }
 }
 
 function renderBoardCards(container,procs,isCarryFwd){

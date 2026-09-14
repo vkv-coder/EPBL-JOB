@@ -7,6 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Job Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Noto+Sans+Gujarati:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -1634,6 +1637,10 @@ window.onload=function(){
   if(currentWorker){loadWorkerHome();showScreen('scr-worker-home');}
   else if(currentAdmin){document.getElementById('admin-email-display').textContent=currentAdmin.email;showScreen('scr-admin-home');renderAdminMenu();}
 };
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+}
 </script>
 </body>
 </html>

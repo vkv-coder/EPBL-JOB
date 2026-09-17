@@ -1212,7 +1212,7 @@ async function approveInspection(inspId,jobNo,seq){
 async function rejectInspection(inspId,jobNo,seq,workerName,workerMobile){
   const remarks=document.getElementById(`insp-txt-${inspId}`)?.value||'';
   try{
-    const d=await apiPost({action:'rejectInspection',inspId,jobNo,seq,workerName,workerMobile,remarks});
+    const d=await apiPost({action:'rejectInspection',inspId,jobNo,seq,workerName,workerMobile,remarks,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
     showToast('❌ Rejected — rework assigned');inspBadgeTime=0;loadAdminTab('inspect',true);
   }catch(e){showToast('⚠️ '+e.message);}

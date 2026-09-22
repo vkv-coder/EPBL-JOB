@@ -553,6 +553,42 @@ async function adminOtpVerify(){
 function adminLogout(){currentAdmin=null;localStorage.removeItem('admin');showScreen('scr-splash');}
 
 // ── WORKER HOME ──
+function renderJobsList(jobs){
+  const body=document.getElementById('worker-jobs-body');
+  if(!jobs.length){
+    body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No jobs assigned yet</div><div class="empty-sub">Admin will assign processes to you</div></div>`;
+    return;
+  }
+  body.innerHTML='';
+  for(const j of jobs){
+    const badgeText=j.colour==='green'?'✓ On Track':j.colour==='red'?'⚠️ Delayed':'⚪ Upcoming';
+    const div=document.createElement('div');
+    div.className=`jcard ${j.colour}`;
+    div.innerHTML=`
+      <div class="jc-r1"><div class="jno ${j.colour}">${j.jobNo}</div><div class="jbadge ${j.colour}">${badgeText}</div></div>
+      <div class="jcust">${j.customer} · ${j.productType}</div>
+      <div class="grid3">
+        <div class="g3c g3-tot"><div class="g3n">${j.total}</div><div class="g3l">Total</div></div>
+        <div class="g3c g3-act"><div class="g3n">${j.active}</div><div class="g3l">Active</div></div>
+        <div class="g3c g3-fut"><div class="g3n">${j.future}</div><div class="g3l">Future</div></div>
+      </div>
+      <div class="dstrip">
+        <div class="dsb"><div class="dsl">First</div><div class="dsv ${j.colour==='grey'?'fut':''}">${j.firstProcDate}</div></div>
+        <div style="color:var(--muted)">→</div>
+        <div class="dsb" style="text-align:right"><div class="dsl">Last</div><div class="dsv ${j.colour==='grey'?'fut':''}">${j.lastProcDate}</div></div>
+      </div>
+      <div class="jprog"><div class="jprog-bar" style="width:${j.progress}%;background:${j.colour==='red'?'linear-gradient(90deg,var(--red),var(--orange))':j.colour==='green'?'linear-gradient(90deg,var(--blue2),var(--green))':'var(--grey)'}"></div></div>
+      <div class="jfoot"><span>${j.progress}% complete</span><span class="jtap">Tap to view ›</span></div>`;
+    div.onclick=()=>{
+      currentJob=j;
+      document.getElementById('pl-title').textContent=j.jobNo;
+      document.getElementById('pl-sub').textContent=j.customer+' · '+j.productType;
+      loadProcs();showScreen('scr-procs');
+    };
+    body.appendChild(div);
+  }
+}
+
 async function loadWorkerHome(){
   if(!currentWorker)return;
   document.getElementById('wh-title').textContent='🤝 '+currentWorker.name;
@@ -560,43 +596,19 @@ async function loadWorkerHome(){
   document.getElementById('wm-name').textContent=currentWorker.name;
   document.getElementById('wm-dept').textContent=currentWorker.dept1+(currentWorker.dept2?' · '+currentWorker.dept2:'');
   const body=document.getElementById('worker-jobs-body');
-  body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading your jobs...</div>`;
+  // Stale-while-revalidate: paint last-seen jobs instantly, then refresh quietly.
+  const cacheKey='swr_myjobs_'+currentWorker.workerId;
+  const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+  if(cached)renderJobsList(cached.jobs);
+  else body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading your jobs...</div>`;
   try{
     const d=await api({action:'getMyJobs',workerId:currentWorker.workerId});
     if(!d.success)throw new Error(d.error);
-    if(!d.jobs.length){
-      body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No jobs assigned yet</div><div class="empty-sub">Admin will assign processes to you</div></div>`;
-      return;
-    }
-    body.innerHTML='';
-    for(const j of d.jobs){
-      const badgeText=j.colour==='green'?'✓ On Track':j.colour==='red'?'⚠️ Delayed':'⚪ Upcoming';
-      const div=document.createElement('div');
-      div.className=`jcard ${j.colour}`;
-      div.innerHTML=`
-        <div class="jc-r1"><div class="jno ${j.colour}">${j.jobNo}</div><div class="jbadge ${j.colour}">${badgeText}</div></div>
-        <div class="jcust">${j.customer} · ${j.productType}</div>
-        <div class="grid3">
-          <div class="g3c g3-tot"><div class="g3n">${j.total}</div><div class="g3l">Total</div></div>
-          <div class="g3c g3-act"><div class="g3n">${j.active}</div><div class="g3l">Active</div></div>
-          <div class="g3c g3-fut"><div class="g3n">${j.future}</div><div class="g3l">Future</div></div>
-        </div>
-        <div class="dstrip">
-          <div class="dsb"><div class="dsl">First</div><div class="dsv ${j.colour==='grey'?'fut':''}">${j.firstProcDate}</div></div>
-          <div style="color:var(--muted)">→</div>
-          <div class="dsb" style="text-align:right"><div class="dsl">Last</div><div class="dsv ${j.colour==='grey'?'fut':''}">${j.lastProcDate}</div></div>
-        </div>
-        <div class="jprog"><div class="jprog-bar" style="width:${j.progress}%;background:${j.colour==='red'?'linear-gradient(90deg,var(--red),var(--orange))':j.colour==='green'?'linear-gradient(90deg,var(--blue2),var(--green))':'var(--grey)'}"></div></div>
-        <div class="jfoot"><span>${j.progress}% complete</span><span class="jtap">Tap to view ›</span></div>`;
-      div.onclick=()=>{
-        currentJob=j;
-        document.getElementById('pl-title').textContent=j.jobNo;
-        document.getElementById('pl-sub').textContent=j.customer+' · '+j.productType;
-        loadProcs();showScreen('scr-procs');
-      };
-      body.appendChild(div);
-    }
-  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;}
+    renderJobsList(d.jobs);
+    localStorage.setItem(cacheKey,JSON.stringify({jobs:d.jobs}));
+  }catch(e){
+    if(!cached)body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;
+  }
 }
 
 function showChangePinScreen(){clearPin('op');clearPin('newp');clearPin('conp');showScreen('scr-change-pin');}
@@ -656,52 +668,64 @@ async function loadWorkerHistory(){
 }
 
 // ── PROCESS LIST — Worker: view + remark only, NO start/stop ──
+function renderProcsList(procs){
+  const body=document.getElementById('proc-list-body');
+  body.innerHTML=`
+    <div class="job-strip">
+      <div><div class="js-no">${currentJob.jobNo}</div><div class="js-cust">${currentJob.customer}</div></div>
+      <div style="text-align:right"><div class="js-type">${currentJob.productType}</div></div>
+    </div>
+    <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#92400e">
+      ℹ️ Admin controls job start/stop. You can add remarks below.
+    </div>`;
+  if(!procs||procs.length===0){
+    body.innerHTML+=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No processes found</div></div>`;
+    return;
+  }
+  for(const p of procs){
+    const isDone=p.status==='Done',isRunning=p.status==='In Progress',isRework=p.status==='Rework',isPendInsp=p.status==='Pending Inspection';
+    const sc=isDone?'g':isRunning?'o':isRework?'r':'w';
+    const alertTxt=isDone?(p.delayHrs>0?'⚠️ Done — delayed':'✅ Done on time'):isPendInsp?'🔍 Pending Inspection':isRework?'🔄 Rework needed':isRunning?'🟠 Running now':'⚪ Pending';
+    const alertCls=isDone?'ag':isPendInsp?'ao':isRework?'ar':isRunning?'ao':'aw';
+    const div=document.createElement('div');
+    div.className=`proc-card p${sc}`;
+    div.innerHTML=`
+      <div class="pc-top">
+        <div class="pc-seq ${sc}">${p.isInspection?'🔍':p.seq}</div>
+        <div class="pc-name ${sc}">${p.name}</div>
+        <div class="sdot ${sc}"></div>
+      </div>
+      <div class="pc-alert ${alertCls}">${alertTxt}</div>
+      <div class="pc-dates">
+        <div class="pdb"><div class="pdl">Plan Start</div><div class="pdv">${p.planStart}</div></div>
+        <div class="pdb"><div class="pdl">Plan End</div><div class="pdv">${p.planEnd}</div></div>
+        <div class="pdb"><div class="pdl">Actual Start</div><div class="pdv act">${p.actStart||'—'}</div></div>
+        <div class="pdb"><div class="pdl">Actual End</div><div class="pdv act">${p.actEnd||'—'}</div></div>
+      </div>
+      <div class="pac">
+        <button class="brem" style="width:100%" onclick="openRemark(${p.seq},'${p.name.replace(/'/g,"\\'").substring(0,40)}')">📝 Add Remark</button>
+      </div>`;
+    body.appendChild(div);
+  }
+}
+
 async function loadProcs(){
   const body=document.getElementById('proc-list-body');
-  body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
+  // Stale-while-revalidate: paint last-seen processes instantly, then refresh quietly.
+  const cacheKey='swr_procs_'+currentJob.jobNo+'_'+(currentWorker?currentWorker.workerId:'admin');
+  const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+  if(cached)renderProcsList(cached.procs);
+  else body.innerHTML=`<div class="loading"><div class="spinner"></div> Loading...</div>`;
   try{
     const params={action:'getJobProcs',jobNo:currentJob.jobNo};
     if(currentWorker)params.workerId=currentWorker.workerId;
     const d=await api(params);
     if(!d.success)throw new Error(d.error);
-    body.innerHTML=`
-      <div class="job-strip">
-        <div><div class="js-no">${currentJob.jobNo}</div><div class="js-cust">${currentJob.customer}</div></div>
-        <div style="text-align:right"><div class="js-type">${currentJob.productType}</div></div>
-      </div>
-      <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#92400e">
-        ℹ️ Admin controls job start/stop. You can add remarks below.
-      </div>`;
-    if(!d.procs||d.procs.length===0){
-      body.innerHTML+=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No processes found</div></div>`;
-      return;
-    }
-    for(const p of d.procs){
-      const isDone=p.status==='Done',isRunning=p.status==='In Progress',isRework=p.status==='Rework',isPendInsp=p.status==='Pending Inspection';
-      const sc=isDone?'g':isRunning?'o':isRework?'r':'w';
-      const alertTxt=isDone?(p.delayHrs>0?'⚠️ Done — delayed':'✅ Done on time'):isPendInsp?'🔍 Pending Inspection':isRework?'🔄 Rework needed':isRunning?'🟠 Running now':'⚪ Pending';
-      const alertCls=isDone?'ag':isPendInsp?'ao':isRework?'ar':isRunning?'ao':'aw';
-      const div=document.createElement('div');
-      div.className=`proc-card p${sc}`;
-      div.innerHTML=`
-        <div class="pc-top">
-          <div class="pc-seq ${sc}">${p.isInspection?'🔍':p.seq}</div>
-          <div class="pc-name ${sc}">${p.name}</div>
-          <div class="sdot ${sc}"></div>
-        </div>
-        <div class="pc-alert ${alertCls}">${alertTxt}</div>
-        <div class="pc-dates">
-          <div class="pdb"><div class="pdl">Plan Start</div><div class="pdv">${p.planStart}</div></div>
-          <div class="pdb"><div class="pdl">Plan End</div><div class="pdv">${p.planEnd}</div></div>
-          <div class="pdb"><div class="pdl">Actual Start</div><div class="pdv act">${p.actStart||'—'}</div></div>
-          <div class="pdb"><div class="pdl">Actual End</div><div class="pdv act">${p.actEnd||'—'}</div></div>
-        </div>
-        <div class="pac">
-          <button class="brem" style="width:100%" onclick="openRemark(${p.seq},'${p.name.replace(/'/g,"\\'").substring(0,40)}')">📝 Add Remark</button>
-        </div>`;
-      body.appendChild(div);
-    }
-  }catch(e){body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;}
+    renderProcsList(d.procs||[]);
+    localStorage.setItem(cacheKey,JSON.stringify({procs:d.procs||[]}));
+  }catch(e){
+    if(!cached)body.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">${e.message}</div></div>`;
+  }
 }
 
 // ── REMARK ──

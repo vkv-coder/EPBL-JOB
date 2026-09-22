@@ -442,8 +442,73 @@ body{font-family:'DM Sans','Noto Sans Gujarati',sans-serif;background:var(--bg);
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const API='https://script.google.com/macros/s/AKfycbzdpCpn88jMAENuvqT8FQB6exEeO62af2FxocAWKTBW6C434S_tSviRyDKqY9-S1tI/exec';
+// STAGING BUILD — Supabase backend (rotry_event project, epbl schema),
+// replacing the Apps Script + Google Sheets backend. Only api()/apiPost()
+// below changed; every call site elsewhere in this file is untouched.
+const SUPABASE_URL='https://wrzpgultvahxbrgooibn.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyenBndWx0dmFoeGJyZ29vaWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Mzc2MTcsImV4cCI6MjA5MzExMzYxN30.sZM4GQiwom34d7TjeK_Jc_n8KYoC8VhI48jfq71dwb8';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{db:{schema:'epbl'}});
+
+// action -> [rpc_function_name, {clientParamKey: rpc_param_name}]
+const RPC_MAP={
+  createJob:['create_job',{jobNo:'p_job_no',productType:'p_product_type',customerName:'p_customer_name',startDate:'p_start_date'}],
+  getMyJobs:['get_my_jobs',{workerId:'p_worker_id'}],
+  getJobProcs:['get_job_procs',{jobNo:'p_job_no',workerId:'p_worker_id'}],
+  getJobSchedule:['get_job_schedule',{jobNo:'p_job_no'}],
+  stampStart:['stamp_start',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',adminEmail:'p_admin_email'}],
+  stampStop:['stamp_stop',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',adminEmail:'p_admin_email'}],
+  saveRemark:['save_remark',{jobNo:'p_job_no',seq:'p_seq',remark:'p_remark'}],
+  getDepts:['get_depts',{}],
+  adminJobs:['admin_jobs',{}],
+  getTodayBoard:['get_today_board',{}],
+  getTomorrowBoard:['get_tomorrow_board',{}],
+  getWeekBoard:['get_week_board',{}],
+  assignWorker:['assign_worker',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',workerId:'p_worker_id',workerName:'p_worker_name',adminEmail:'p_admin_email',forceParallel:'p_force_parallel'}],
+  reassignWorker:['reassign_worker',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',oldWorkerId:'p_old_worker_id',newWorkerId:'p_new_worker_id',newWorkerName:'p_new_worker_name',adminEmail:'p_admin_email'}],
+  forceReassign:['force_reassign',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',oldWorkerId:'p_old_worker_id',newWorkerId:'p_new_worker_id',newWorkerName:'p_new_worker_name',adminEmail:'p_admin_email'}],
+  manualAssign:['manual_assign',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',workerName:'p_worker_name',adminEmail:'p_admin_email'}],
+  getWorkersByDept:['get_workers_by_dept',{dept:'p_dept'}],
+  getWorkerBoard:['get_worker_board',{}],
+  createWorker:['create_worker',{name:'p_name',mobile:'p_mobile',dept1:'p_dept1',dept2:'p_dept2',adminEmail:'p_admin_email'}],
+  workerLogin:['worker_login',{mobile:'p_mobile',pin:'p_pin'}],
+  setPin:['set_pin',{workerId:'p_worker_id',pin:'p_pin'}],
+  changePin:['change_pin',{workerId:'p_worker_id',oldPin:'p_old_pin',newPin:'p_new_pin'}],
+  resetPin:['reset_pin',{workerId:'p_worker_id'}],
+  requestAdminOtp:['request_admin_otp',{email:'p_email'}],
+  verifyAdminOtp:['verify_admin_otp',{email:'p_email',code:'p_code'}],
+  getAllWorkers:['get_all_workers',{}],
+  toggleWorker:['toggle_worker',{workerId:'p_worker_id',active:'p_active'}],
+  deleteJob:['delete_job',{jobNo:'p_job_no'}],
+  getUnassignedToday:['get_unassigned_today',{}],
+  getWorkerHistory:['get_worker_history',{workerId:'p_worker_id'}],
+  getPendingInspections:['get_pending_inspections',{}],
+  approveInspection:['approve_inspection',{inspId:'p_insp_id',adminEmail:'p_admin_email',remarks:'p_remarks'}],
+  rejectInspection:['reject_inspection',{inspId:'p_insp_id',workerMobile:'p_worker_mobile',workerName:'p_worker_name',remarks:'p_remarks',adminEmail:'p_admin_email'}],
+  getInspectionHistory:['get_inspection_history',{jobNo:'p_job_no'}],
+  getSummary:['get_summary',{}],
+  adminStop:['admin_stop',{jobNo:'p_job_no',seq:'p_seq',actEndTime:'p_act_end_time',adminEmail:'p_admin_email',remark:'p_remark',excessReason:'p_excess_reason'}],
+  saveAdminNote:['save_admin_note',{jobNo:'p_job_no',seq:'p_seq',note:'p_note',adminEmail:'p_admin_email'}],
+  searchJobs:['search_jobs',{jobNo:'p_job_no',status:'p_status'}],
+};
+
+async function callRPC(p){
+  const {action, ...rest}=p;
+  if(action==='getDeptJobs')return{success:true,jobs:[]}; // dead stub, kept for parity — unused by any screen
+  if(action==='colorSchedule')return{success:true}; // sheet-coloring is gone; status colors are already computed client-side from RPC responses
+  const entry=RPC_MAP[action];
+  if(!entry)return{success:false,error:'Unknown action: '+action};
+  const [fn,paramMap]=entry;
+  const rpcParams={};
+  for(const [clientKey,rpcKey] of Object.entries(paramMap)){
+    if(rest[clientKey]!==undefined)rpcParams[rpcKey]=rest[clientKey];
+  }
+  const {data,error}=await sb.rpc(fn,rpcParams);
+  if(error)return{success:false,error:error.message};
+  return data;
+}
+
 let lang=localStorage.getItem('lang')||'en';
 let currentWorker=JSON.parse(localStorage.getItem('worker')||'null');
 let currentAdmin=JSON.parse(localStorage.getItem('admin')||'null');
@@ -461,8 +526,8 @@ let currentJob=null,remarkCtx=null,assignCtx=null,allDepts=[],selType='',adminSt
 let selectedStatus='All';
 const ICONS={Assembly:'🔧',Bending:'🔨',Cutting:'✂️',Drilling:'🔩',Fitting:'⚙️',Grinding:'💿',Insulation:'🧱',Machining:'🏭',Painting:'🎨',Refractory:'🔥',Testing:'🧪',Welding:'⚡',Wiring:'🔌'};
 
-async function api(p){const r=await fetch(API+'?'+new URLSearchParams(p).toString());return r.json();}
-async function apiPost(b){const r=await fetch(API,{method:'POST',body:JSON.stringify(b)});return r.json();}
+async function api(p){return callRPC(p);}
+async function apiPost(b){return callRPC(b);}
 
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function toggleLang(){lang=lang==='en'?'gu':'en';localStorage.setItem('lang',lang);document.getElementById('lang-toggle').textContent=lang==='en'?'🌐 ગુજરાતી માં બદલો':'🌐 English માં બદલો';}

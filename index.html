@@ -1300,6 +1300,11 @@ async function approveInspection(inspId,jobNo,seq){
     if(!d.success)throw new Error(d.error);
     showToast('✅ Approved! Assign next process from Today Board.');
     inspBadgeTime=0;loadAdminTab('inspect',true);
+    const wa=d.whatsapp;
+    if(wa?.mobile){
+      const msg=encodeURIComponent(`✅ Approved — Job ${wa.jobNo} · Seq ${wa.seq}\n${wa.procName||''}\nGood work!`);
+      setTimeout(()=>{if(confirm(`📲 Notify ${wa.workerName||'worker'} on WhatsApp?`))window.open(`https://wa.me/91${wa.mobile}?text=${msg}`,'_blank');},400);
+    }
   }catch(e){showToast('⚠️ '+e.message);btn.disabled=false;btn.textContent='✅ Approve';}
 }
 async function rejectInspection(inspId,jobNo,seq,workerName,workerMobile){
@@ -1308,6 +1313,11 @@ async function rejectInspection(inspId,jobNo,seq,workerName,workerMobile){
     const d=await apiPost({action:'rejectInspection',inspId,jobNo,seq,workerName,workerMobile,remarks,adminEmail:currentAdmin?.email||''});
     if(!d.success)throw new Error(d.error);
     showToast('❌ Rejected — rework assigned');inspBadgeTime=0;loadAdminTab('inspect',true);
+    const wa=d.whatsapp;
+    if(wa?.mobile){
+      const msg=encodeURIComponent(`❌ Rejected — Job ${wa.jobNo} · Seq ${wa.seq}\n${wa.procName||''}\nReason: ${wa.remarks||'see remarks'}\nPlease rework.`);
+      setTimeout(()=>{if(confirm(`📲 Notify ${wa.workerName||'worker'} on WhatsApp?`))window.open(`https://wa.me/91${wa.mobile}?text=${msg}`,'_blank');},400);
+    }
   }catch(e){showToast('⚠️ '+e.message);}
 }
 

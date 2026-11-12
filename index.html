@@ -453,44 +453,45 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{db:{schema:'epbl'
 
 // action -> [rpc_function_name, {clientParamKey: rpc_param_name}]
 const RPC_MAP={
-  createJob:['create_job',{jobNo:'p_job_no',productType:'p_product_type',customerName:'p_customer_name',startDate:'p_start_date'}],
+  createJob:['create_job',{jobNo:'p_job_no',productType:'p_product_type',customerName:'p_customer_name',startDate:'p_start_date',adminToken:'p_admin_token'}],
   getMyJobs:['get_my_jobs',{workerId:'p_worker_id'}],
   getJobProcs:['get_job_procs',{jobNo:'p_job_no',workerId:'p_worker_id'}],
   getJobSchedule:['get_job_schedule',{jobNo:'p_job_no'}],
-  stampStart:['stamp_start',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',adminEmail:'p_admin_email'}],
-  stampStop:['stamp_stop',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',adminEmail:'p_admin_email'}],
+  stampStart:['stamp_start',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',adminToken:'p_admin_token'}],
+  stampStop:['stamp_stop',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',adminToken:'p_admin_token'}],
   saveRemark:['save_remark',{jobNo:'p_job_no',seq:'p_seq',remark:'p_remark'}],
   getDepts:['get_depts',{}],
   adminJobs:['admin_jobs',{}],
   getTodayBoard:['get_today_board',{}],
   getTomorrowBoard:['get_tomorrow_board',{}],
   getWeekBoard:['get_week_board',{}],
-  assignWorker:['assign_worker',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',workerId:'p_worker_id',workerName:'p_worker_name',adminEmail:'p_admin_email',forceParallel:'p_force_parallel'}],
-  reassignWorker:['reassign_worker',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',oldWorkerId:'p_old_worker_id',newWorkerId:'p_new_worker_id',newWorkerName:'p_new_worker_name',adminEmail:'p_admin_email'}],
-  forceReassign:['force_reassign',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',oldWorkerId:'p_old_worker_id',newWorkerId:'p_new_worker_id',newWorkerName:'p_new_worker_name',adminEmail:'p_admin_email'}],
-  manualAssign:['manual_assign',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',workerName:'p_worker_name',adminEmail:'p_admin_email'}],
+  assignWorker:['assign_worker',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',workerId:'p_worker_id',workerName:'p_worker_name',adminToken:'p_admin_token',forceParallel:'p_force_parallel'}],
+  reassignWorker:['reassign_worker',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',oldWorkerId:'p_old_worker_id',newWorkerId:'p_new_worker_id',newWorkerName:'p_new_worker_name',adminToken:'p_admin_token'}],
+  forceReassign:['force_reassign',{jobNo:'p_job_no',seq:'p_seq',dept:'p_dept',oldWorkerId:'p_old_worker_id',newWorkerId:'p_new_worker_id',newWorkerName:'p_new_worker_name',adminToken:'p_admin_token'}],
+  manualAssign:['manual_assign',{jobNo:'p_job_no',seq:'p_seq',workerId:'p_worker_id',workerName:'p_worker_name',adminToken:'p_admin_token'}],
   getWorkersByDept:['get_workers_by_dept',{dept:'p_dept'}],
   getWorkerBoard:['get_worker_board',{}],
-  createWorker:['create_worker',{name:'p_name',mobile:'p_mobile',dept1:'p_dept1',dept2:'p_dept2',adminEmail:'p_admin_email'}],
+  createWorker:['create_worker',{name:'p_name',mobile:'p_mobile',dept1:'p_dept1',dept2:'p_dept2',adminToken:'p_admin_token'}],
   workerLogin:['worker_login',{mobile:'p_mobile',pin:'p_pin'}],
   setPin:['set_pin',{workerId:'p_worker_id',pin:'p_pin'}],
   changePin:['change_pin',{workerId:'p_worker_id',oldPin:'p_old_pin',newPin:'p_new_pin'}],
-  resetPin:['reset_pin',{workerId:'p_worker_id'}],
+  resetPin:['reset_pin',{workerId:'p_worker_id',adminToken:'p_admin_token'}],
   requestAdminOtp:['request_admin_otp',{email:'p_email'}],
   verifyAdminOtp:['verify_admin_otp',{email:'p_email',code:'p_code'}],
   getAllWorkers:['get_all_workers',{}],
-  toggleWorker:['toggle_worker',{workerId:'p_worker_id',active:'p_active'}],
-  deleteJob:['delete_job',{jobNo:'p_job_no'}],
+  toggleWorker:['toggle_worker',{workerId:'p_worker_id',active:'p_active',adminToken:'p_admin_token'}],
+  deleteJob:['delete_job',{jobNo:'p_job_no',adminToken:'p_admin_token'}],
   getUnassignedToday:['get_unassigned_today',{}],
   getWorkerHistory:['get_worker_history',{workerId:'p_worker_id'}],
   getPendingInspections:['get_pending_inspections',{}],
-  approveInspection:['approve_inspection',{inspId:'p_insp_id',adminEmail:'p_admin_email',remarks:'p_remarks'}],
-  rejectInspection:['reject_inspection',{inspId:'p_insp_id',workerMobile:'p_worker_mobile',workerName:'p_worker_name',remarks:'p_remarks',adminEmail:'p_admin_email'}],
+  approveInspection:['approve_inspection',{inspId:'p_insp_id',adminToken:'p_admin_token',remarks:'p_remarks'}],
+  rejectInspection:['reject_inspection',{inspId:'p_insp_id',workerMobile:'p_worker_mobile',workerName:'p_worker_name',remarks:'p_remarks',adminToken:'p_admin_token'}],
   getInspectionHistory:['get_inspection_history',{jobNo:'p_job_no'}],
   getSummary:['get_summary',{}],
-  adminStop:['admin_stop',{jobNo:'p_job_no',seq:'p_seq',actEndTime:'p_act_end_time',adminEmail:'p_admin_email',remark:'p_remark',excessReason:'p_excess_reason'}],
-  saveAdminNote:['save_admin_note',{jobNo:'p_job_no',seq:'p_seq',note:'p_note',adminEmail:'p_admin_email'}],
+  adminStop:['admin_stop',{jobNo:'p_job_no',seq:'p_seq',actEndTime:'p_act_end_time',adminToken:'p_admin_token',remark:'p_remark',excessReason:'p_excess_reason'}],
+  saveAdminNote:['save_admin_note',{jobNo:'p_job_no',seq:'p_seq',note:'p_note',adminToken:'p_admin_token'}],
   searchJobs:['search_jobs',{jobNo:'p_job_no',status:'p_status'}],
+  adminLogout:['admin_logout',{adminToken:'p_admin_token'}],
 };
 
 async function callRPC(p){
@@ -606,7 +607,7 @@ async function adminOtpVerify(){
     const d=await apiPost({action:'verifyAdminOtp',email:pendingAdminEmail,code});
     btn.textContent='Verify & Continue';btn.disabled=false;
     if(d.success){
-      currentAdmin={email:pendingAdminEmail};
+      currentAdmin={email:pendingAdminEmail,token:d.token};
       localStorage.setItem('admin',JSON.stringify(currentAdmin));
       document.getElementById('admin-email-display').textContent=pendingAdminEmail;
       showScreen('scr-admin-home');
@@ -615,7 +616,10 @@ async function adminOtpVerify(){
     }else showToast('⚠️ '+(d.error||'Incorrect or expired code'));
   }catch(e){btn.textContent='Verify & Continue';btn.disabled=false;showToast('⚠️ '+e.message);}
 }
-function adminLogout(){currentAdmin=null;localStorage.removeItem('admin');showScreen('scr-splash');}
+function adminLogout(){
+  if(currentAdmin?.token)apiPost({action:'adminLogout',adminToken:currentAdmin.token}).catch(()=>{});
+  currentAdmin=null;localStorage.removeItem('admin');showScreen('scr-splash');
+}
 
 // ── WORKER HOME ──
 function renderJobsList(jobs){
@@ -1048,10 +1052,10 @@ async function assignFromCard(jobNo,seq,dept,cardId){
   const btn=sel.nextElementSibling;
   const origTxt=btn.textContent;btn.disabled=true;btn.textContent='⏳';
   try{
-    const d=await apiPost({action:'assignWorker',jobNo,seq,dept:dept||'Default',workerId,workerName,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'assignWorker',jobNo,seq,dept:dept||'Default',workerId,workerName,adminToken:currentAdmin?.token||''});
     if(d.busy){
       if(confirm(`${workerName} is busy on Job ${d.busyJobNo} Seq ${d.busySeq}.\nOK = Assign as PARALLEL`)){
-        const d2=await apiPost({action:'assignWorker',jobNo,seq,dept:dept||'Default',workerId,workerName,adminEmail:currentAdmin?.email||'',forceParallel:true});
+        const d2=await apiPost({action:'assignWorker',jobNo,seq,dept:dept||'Default',workerId,workerName,adminToken:currentAdmin?.token||'',forceParallel:true});
         if(!d2.success)throw new Error(d2.error);
         showToast(`✅ ${workerName} assigned (Parallel)`);
       }else{btn.disabled=false;btn.textContent=origTxt;return;}
@@ -1069,7 +1073,7 @@ async function adminStart(jobNo,seq,btn){
   if(!confirm(`▶ Start Job ${jobNo} Seq ${seq}?\nActual Start = NOW`))return;
   const orig=btn.textContent;btn.disabled=true;btn.textContent='⏳';
   try{
-    const d=await apiPost({action:'stampStart',jobNo,seq,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'stampStart',jobNo,seq,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast('✅ Started — '+d.actStart);
     loadAdminTab('today',true);
@@ -1102,7 +1106,7 @@ async function doAdminStop(){
   const btn=document.getElementById('asm-save');btn.disabled=true;btn.textContent='⏳ Stopping...';
   try{
     const d=await apiPost({action:'adminStop',jobNo:adminStopCtx.jobNo,seq:adminStopCtx.seq,
-      actEndTime:new Date(actEndTime).toISOString(),adminEmail:currentAdmin?.email||'',remark,excessReason});
+      actEndTime:new Date(actEndTime).toISOString(),adminToken:currentAdmin?.token||'',remark,excessReason});
     if(!d.success)throw new Error(d.error);
     showToast('✅ Stopped. Inspection pending — notify Kalpesh & Hardik.');
     // Show WhatsApp buttons for both inspectors
@@ -1239,8 +1243,8 @@ async function openAssignModal(jobNo,seq,dept,procName){
     div.innerHTML=`<div><div style="font-size:13px;font-weight:700;color:var(--navy)">${w.name}</div><div style="font-size:10px;color:var(--muted)">${w.dept1}${w.dept2?' / '+w.dept2:''}</div></div><div style="color:var(--green);font-weight:700">🟢</div>`;
     div.onclick=async()=>{
       try{
-        const d=await apiPost({action:'assignWorker',jobNo:assignCtx.jobNo,seq:assignCtx.seq,dept:assignCtx.dept||'Default',workerId:w.workerId,workerName:w.name,adminEmail:currentAdmin?.email||''});
-        if(d.busy){if(!confirm(w.name+' is busy. Assign as PARALLEL?'))return;await apiPost({action:'assignWorker',jobNo:assignCtx.jobNo,seq:assignCtx.seq,dept:assignCtx.dept||'Default',workerId:w.workerId,workerName:w.name,adminEmail:currentAdmin?.email||'',forceParallel:true});}
+        const d=await apiPost({action:'assignWorker',jobNo:assignCtx.jobNo,seq:assignCtx.seq,dept:assignCtx.dept||'Default',workerId:w.workerId,workerName:w.name,adminToken:currentAdmin?.token||''});
+        if(d.busy){if(!confirm(w.name+' is busy. Assign as PARALLEL?'))return;await apiPost({action:'assignWorker',jobNo:assignCtx.jobNo,seq:assignCtx.seq,dept:assignCtx.dept||'Default',workerId:w.workerId,workerName:w.name,adminToken:currentAdmin?.token||'',forceParallel:true});}
         else if(!d.success)throw new Error(d.error);
         showToast('✅ '+w.name+' assigned!');allWorkersCache=[];closeAssignModal();loadAdminTab(currentAdminTab,true);
       }catch(e){showToast('⚠️ '+e.message);}
@@ -1296,7 +1300,7 @@ function toggleRejectRemark(inspId){
 async function approveInspection(inspId,jobNo,seq){
   const btn=event.target;btn.disabled=true;btn.textContent='⏳ Approving...';
   try{
-    const d=await apiPost({action:'approveInspection',inspId,jobNo,seq,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'approveInspection',inspId,jobNo,seq,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast('✅ Approved! Assign next process from Today Board.');
     inspBadgeTime=0;loadAdminTab('inspect',true);
@@ -1310,7 +1314,7 @@ async function approveInspection(inspId,jobNo,seq){
 async function rejectInspection(inspId,jobNo,seq,workerName,workerMobile){
   const remarks=document.getElementById(`insp-txt-${inspId}`)?.value||'';
   try{
-    const d=await apiPost({action:'rejectInspection',inspId,jobNo,seq,workerName,workerMobile,remarks,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'rejectInspection',inspId,jobNo,seq,workerName,workerMobile,remarks,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast('❌ Rejected — rework assigned');inspBadgeTime=0;loadAdminTab('inspect',true);
     const wa=d.whatsapp;
@@ -1388,7 +1392,7 @@ async function loadAdminJobs(body){
 async function deleteJob(jobNo){
   if(!confirm(`Delete job ${jobNo}?\nThis cannot be undone!`))return;
   try{
-    const d=await apiPost({action:'deleteJob',jobNo,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'deleteJob',jobNo,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast(`✅ Job ${jobNo} deleted`);loadAdminTab('jobs',true);
   }catch(e){showToast('⚠️ '+e.message);}
@@ -1421,7 +1425,7 @@ async function loadWorkerMgmt(body){
 async function resetWorkerPin(workerId,name){
   if(!confirm(`Reset PIN for ${name}?`))return;
   try{
-    const d=await apiPost({action:'resetPin',workerId,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'resetPin',workerId,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast(`✅ PIN reset for ${name}`);loadAdminTab('workers',true);
   }catch(e){showToast('⚠️ '+e.message);}
@@ -1429,7 +1433,7 @@ async function resetWorkerPin(workerId,name){
 async function toggleWorker(workerId,status,name){
   const active=status!=='Active';
   try{
-    const d=await apiPost({action:'toggleWorker',workerId,active});
+    const d=await apiPost({action:'toggleWorker',workerId,active,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast(`✅ ${name} ${active?'activated':'deactivated'}`);loadAdminTab('workers',true);
   }catch(e){showToast('⚠️ '+e.message);}
@@ -1452,7 +1456,7 @@ async function addWorker(){
   if(mobile.length!==10){showToast('⚠️ 10-digit mobile required');return;}
   const btn=document.getElementById('aw-save');btn.textContent='...';btn.disabled=true;
   try{
-    const d=await apiPost({action:'createWorker',name,mobile,dept1,dept2,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'createWorker',name,mobile,dept1,dept2,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast(`✅ ${name} added!`);closeAddWorker();loadAdminTab('workers',true);
   }catch(e){showToast('⚠️ '+e.message);}
@@ -1501,7 +1505,7 @@ async function createJob(){
   const btn=document.getElementById('btn-create');btn.disabled=true;btn.textContent='⏳ Creating...';
   document.getElementById('create-result').style.display='none';
   try{
-    const d=await apiPost({action:'createJob',jobNo,productType:selType,customerName:customer,startDate:date});
+    const d=await apiPost({action:'createJob',jobNo,productType:selType,customerName:customer,startDate:date,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     document.getElementById('create-result-body').innerHTML=`<b>${d.jobNo}</b> · ${d.productType}<br>Customer: ${d.customerName}<br>Schedule rows: ${d.totalProcessRows}`;
     document.getElementById('create-result').style.display='block';
@@ -1654,7 +1658,7 @@ async function saveAdminNote(){
   const note=document.getElementById('anm-text').value.trim();if(!note){showToast('⚠️ Enter a note');return;}
   const btn=document.getElementById('anm-save');btn.disabled=true;btn.textContent='...';
   try{
-    const d=await apiPost({action:'saveAdminNote',jobNo:adminNoteCtx.jobNo,seq:adminNoteCtx.seq,note,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'saveAdminNote',jobNo:adminNoteCtx.jobNo,seq:adminNoteCtx.seq,note,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast('✅ Note saved');closeAdminNote();doSearch();
   }catch(e){showToast('⚠️ '+e.message);}
@@ -1726,7 +1730,7 @@ async function doManualAssign(){
   const[workerId,workerName,workerMobile]=workerVal.split('|');
   const btn=document.getElementById('ma-btn');btn.disabled=true;btn.textContent='⏳ Assigning...';
   try{
-    const d=await apiPost({action:'manualAssign',jobNo,seq:parseInt(seq),workerId,workerName,adminEmail:currentAdmin?.email||''});
+    const d=await apiPost({action:'manualAssign',jobNo,seq:parseInt(seq),workerId,workerName,adminToken:currentAdmin?.token||''});
     if(!d.success)throw new Error(d.error);
     showToast(`✅ S${seq} assigned to ${workerName}`);
     if(workerMobile){

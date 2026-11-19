@@ -1,4 +1,4 @@
-const CACHE_NAME = 'epbl-job-v3';
+const CACHE_NAME = 'epbl-job-v4';
 const ASSETS = [
   './',
   './index.html',
